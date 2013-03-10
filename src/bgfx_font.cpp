@@ -70,16 +70,10 @@ void unloadTrueTypeFont(TrueTypeHandle _handle)
 	g_context->fontManager.unLoadTrueType((bgfx_font::TrueTypeHandle)_handle);	
 }
 		
-FontHandle createFontByPixelSize(TrueTypeHandle _handle, uint32_t _pixelSize, FontType _fontType)
+FontHandle createFontByPixelSize(TrueTypeHandle _handle, uint32_t _typefaceIndex, uint32_t _pixelSize, FontType _fontType)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	return (FontHandle) g_context->fontManager.createFontByPixelSize(_handle, _pixelSize, _fontType);
-}
-	
-FontHandle createFontByEmSize(TrueTypeHandle _handle, uint32_t _pixelSize, FontType _fontType)
-{
-	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	return (FontHandle) g_context->fontManager.createFontByEmSize(_handle, _pixelSize, _fontType);
+	return (FontHandle) g_context->fontManager.createFontByPixelSize(_handle, _typefaceIndex, _pixelSize, _fontType);
 }
 
 FontHandle loadBakedFont(const char * _fontPath, const char * _fontName)

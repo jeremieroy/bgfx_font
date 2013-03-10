@@ -25,7 +25,7 @@ namespace bgfx_font
 	enum FontType
 	{
 		FONT_TYPE_ALPHA    = 0x00000100 | TEXTURE_TYPE_ALPHA, // L8
-		FONT_TYPE_HINTED   = 0x00000200 | TEXTURE_TYPE_RGBA,  // BGRA8
+		FONT_TYPE_LCD      = 0x00000200 | TEXTURE_TYPE_RGBA,  // BGRA8
 		FONT_TYPE_RGBA     = 0x00000300 | TEXTURE_TYPE_RGBA,  // BGRA8
 		FONT_TYPE_DISTANCE = 0x00000400 | TEXTURE_TYPE_ALPHA  // L8
 	};
@@ -58,10 +58,12 @@ namespace bgfx_font
 		int16_t lineGap;
 		/// The thickness of the under/hover/striketrough line in pixels
 		int16_t underline_thickness;
+		int16_t underline_position;
 		/// Rendering type used for the font
 		int16_t fontType;
 		/// Id of the texture atlas in which the glyph's bitmap are stored
 		TextureAtlasHandle textureAtlas;		
+		int16_t __padding__;
 
 		/// scale to apply to unscaled coordinates
 		float scale;	

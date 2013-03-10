@@ -69,7 +69,7 @@ public:
 	TrueTypeHandle loadTrueTypeFromFile(const char* fontPath, int32_t fontIndex = 0);
 
 	/// load a TrueType font from a given buffer.
-	/// the buffer must stays valid until the font is unloaded or the FontManager is destroyed
+	/// the buffer is copied and thus can be freed or reused after this call
 	/// @return INVALID_HANDLE if the loading fail
 	TrueTypeHandle loadTrueTypeFromMemory(const uint8_t* buffer, uint32_t size, int32_t fontIndex = 0);
 
@@ -77,11 +77,8 @@ public:
 	void unLoadTrueType(TrueTypeHandle handle);
 
 	/// return a font descriptor whose height is a fixed pixel size	
-	FontHandle createFontByPixelSize(TrueTypeHandle handle, uint32_t pixelSize, FontType fontType = FONT_TYPE_ALPHA);
-	
-	/// return a font descriptor whose height is a fixed pixel size using em mapping
-	FontHandle createFontByEmSize(TrueTypeHandle handle, uint32_t pixelSize, FontType fontType = FONT_TYPE_ALPHA);
-		
+	FontHandle createFontByPixelSize(TrueTypeHandle handle, uint32_t typefaceIndex, uint32_t pixelSize, FontType fontType = FONT_TYPE_ALPHA);
+			
 	/// load a baked font (the set of glyph is fixed)
 	/// @return INVALID_HANDLE if the loading fail
 	FontHandle loadBakedFontFromFile(const char* imagePath, const char* descriptorPath);
@@ -119,6 +116,7 @@ private:
 	// cache font data
 	struct CachedFont
 	{
+		CachedFont(){ trueTypeFont = NULL; }
 		FontInfo fontInfo;
 		GlyphHash_t cachedGlyphs;
 		TrueTypeFont* trueTypeFont;
@@ -127,9 +125,9 @@ private:
 	CachedFont* m_cachedFonts;
 	
 	struct CachedFile
-	{
-		TrueTypeFont* trueType;
+	{		
 		uint8_t* buffer;
+		uint32_t bufferSize;
 	};	
 	bx::HandleAlloc m_filesHandles;
 	CachedFile* m_cachedFiles;	

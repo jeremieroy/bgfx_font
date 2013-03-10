@@ -110,9 +110,7 @@ int _main_(int _argc, char** _argv)
 	bgfx_font::TrueTypeHandle consola_tt = bgfx_font::loadTrueTypeFont("c:/windows/fonts/consola.ttf");
 
 	//create some usable font with of a specific size
-	bgfx_font::FontHandle times_24 = bgfx_font::createFontByPixelSize(times_tt, 24);
-	//you use EM referential if you want
-	//bgfx_font::FontHandle font = bgfx_font::createFontByEmSize(times_tt, 24);
+	bgfx_font::FontHandle times_24 = bgfx_font::createFontByPixelSize(times_tt, 0, 24);
 		
 	//preload glyphs and blit them to atlas
 	bgfx_font::preloadGlyph(times_24, L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ. \n");
@@ -122,7 +120,7 @@ int _main_(int _argc, char** _argv)
 
 	//this font doesn't have any preloaded glyph's but the truetype file is loaded
 	//so glyph will be generated as needed
-	bgfx_font::FontHandle consola_16 = bgfx_font::createFontByPixelSize(consola_tt, 16);
+	bgfx_font::FontHandle consola_16 = bgfx_font::createFontByPixelSize(consola_tt, 0, 16);
 	
 	//create a static text buffer compatible with alpha font
 	//a static text buffer content cannot be modified after its first submit.
@@ -136,10 +134,12 @@ int _main_(int _argc, char** _argv)
 	//the position of the pen is adjusted when there is an endline
 	
 	//setup style colors 
-	bgfx_font::setTextBackgroundColor(staticText, 0x111111FF);
+	bgfx_font::setTextBackgroundColor(staticText, 0x551111FF);
 	bgfx_font::setUnderlineColor(staticText, 0xFF2222FF);
 	bgfx_font::setOverlineColor(staticText, 0x2222FFFF);
 	bgfx_font::setStrikeThroughColor(staticText, 0x22FF22FF);
+
+	
 
 	//text + bkg
 	bgfx_font::setTextStyle(staticText, bgfx_font::STYLE_BACKGROUND);

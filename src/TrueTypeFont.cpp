@@ -1,12 +1,26 @@
 #include "TrueTypeFont.h"
-
-#define STB_TRUETYPE_IMPLEMENTATION
-#include "stb_truetype.h"
-
+/*
+#undef __FTERRORS_H__
+#define FT_ERRORDEF( e, v, s )  { e, s },
+#define FT_ERROR_START_LIST     {
+#define FT_ERROR_END_LIST       { 0, 0 } };
+const struct {
+    int          code;
+    const char*  message;
+} FT_Errors[] =
+*/
+#include "FreeType.h"
 #include "edtaa3func.h"
 
 #include <assert.h>
 #include <math.h>
+
+
+struct FTHolder
+{
+	FT_Library library;
+	FT_Face face;
+};
 
 namespace bgfx_font
 {
@@ -17,116 +31,123 @@ TrueTypeFont::TrueTypeFont(): m_font(NULL)
 
 TrueTypeFont::~TrueTypeFont()
 {
-	delete m_font;
-	m_font = NULL;
+	if(m_font!=NULL)
+	{
+		FTHolder* holder = (FTHolder*) m_font;
+		FT_Done_Face( holder->face );
+        FT_Done_FreeType( holder->library );
+		delete m_font;
+		m_font = NULL;
+	}	
 }
 
-bool TrueTypeFont::init(const uint8_t* buffer, uint32_t size, int32_t fontIndex)
+bool TrueTypeFont::init(const uint8_t* buffer, uint32_t bufferSize, int32_t fontIndex, uint32_t pixelHeight)
 {
-	assert((size > 256 && size < 100000000) && "TrueType buffer size is suspicious");
+	assert((bufferSize > 256 && bufferSize < 100000000) && "TrueType buffer size is suspicious");
+	assert((pixelHeight > 4 && pixelHeight < 128) && "TrueType buffer size is suspicious");
+	
 	assert(m_font == NULL && "TrueTypeFont already initialized" );
 	
-	stbtt_fontinfo fnt;
-	//check if valid
-	if( 0 == stbtt_InitFont( &fnt, (const unsigned char*) buffer, stbtt_GetFontOffsetForIndex((const unsigned char*)buffer, fontIndex)))
+	FTHolder* holder = new FTHolder();	
+
+	// Initialize Freetype library
+	FT_Error error = FT_Init_FreeType( &holder->library );
+	if( error)
 	{
+		delete holder;
 		return false;
 	}
 
-	m_font = new stbtt_fontinfo(fnt);
+	error = FT_New_Memory_Face( holder->library, buffer, bufferSize, fontIndex, &holder->face );
+	if ( error == FT_Err_Unknown_File_Format )
+	{		
+		// the font file could be opened and read, but it appears
+		//that its font format is unsupported
+		FT_Done_FreeType( holder->library );
+		delete holder;
+		return false;
+	}
+	else if ( error )
+	{
+		// another error code means that the font file could not
+		// be opened or read, or simply that it is broken...
+		FT_Done_FreeType( holder->library );
+		delete holder;
+		return false;
+	}
+
+    // Select unicode charmap 
+    error = FT_Select_Charmap( holder->face, FT_ENCODING_UNICODE );
+    if( error )
+    {
+		FT_Done_Face( holder->face );
+		FT_Done_FreeType( holder->library );
+        return false;
+    }
+	//set size in pixels
+	error = FT_Set_Pixel_Sizes( holder->face, 0, pixelHeight );  
+	if( error )
+    {
+		FT_Done_Face( holder->face );
+		FT_Done_FreeType( holder->library );
+        return false;
+    }
+
+	m_font = holder;
 	return true;
 }
 
-FontInfo TrueTypeFont::getFontInfoByEmSize(float pixelSize)
+FontInfo TrueTypeFont::getFontInfo()
 {
 	assert(m_font != NULL && "TrueTypeFont not initialized" );
-	stbtt_fontinfo* fnt = (stbtt_fontinfo*)m_font;
+	FTHolder* holder = (FTHolder*) m_font;
 	
-	int ascent, descent, lineGap;	
-	stbtt_GetFontVMetrics(fnt, &ascent, &descent, &lineGap);
+	assert(FT_IS_SCALABLE (holder->face));
 
-	float scale = stbtt_ScaleForMappingEmToPixels(fnt, pixelSize);	
-	
-	//Simply scaling the font ascent or descent might not give correct results. A possible solution is to keep the ceiling of the scaled ascent, and floor of the scaled descent.		
+	FT_Size_Metrics metrics = holder->face->size->metrics;
+	//todo manage unscalable font
 	FontInfo outFontInfo;
-	outFontInfo.scale = scale;
-	outFontInfo.ascender = ceil(ascent*scale);
-	outFontInfo.descender = floor(descent*scale);
-	outFontInfo.lineGap = ceil(lineGap*scale);
-	//using lineGap for thickness is pbly abusive but it seems to give good results so far
-	outFontInfo.underline_thickness = outFontInfo.lineGap;
-	if(outFontInfo.underline_thickness<1)outFontInfo.underline_thickness = 1;
+	outFontInfo.scale = 1.0f;
+	outFontInfo.ascender = (int16_t)(metrics.ascender >> 6);
+	outFontInfo.descender = (int16_t)(metrics.descender >> 6);
+	outFontInfo.lineGap = (int16_t)((metrics.height - metrics.ascender + metrics.descender)>>6);
+	
+	outFontInfo.underline_position =(int16_t) (FT_MulFix(holder->face->underline_position, metrics.y_scale)>>6);
+	outFontInfo.underline_thickness=(int16_t)(FT_MulFix(holder->face->underline_thickness,metrics.y_scale)>>6);
 	return outFontInfo;
 }
 
-FontInfo TrueTypeFont::getFontInfoByPixelSize(float pixelSize )
-{
-	assert(m_font != NULL && "TrueTypeFont not initialized" );
-	stbtt_fontinfo* fnt = (stbtt_fontinfo*)m_font;
-	
-	int ascent, descent, lineGap;	
-	stbtt_GetFontVMetrics(fnt, &ascent, &descent, &lineGap);
-
-	float scale = stbtt_ScaleForPixelHeight(fnt, pixelSize);	
-	//Simply scaling the font ascent or descent might not give correct results. A possible solution is to keep the ceiling of the scaled ascent, and floor of the scaled descent.
-	FontInfo outFontInfo;
-	outFontInfo.scale = scale;
-	outFontInfo.ascender = ceil(ascent*scale);
-	outFontInfo.descender = floor(descent*scale);
-	outFontInfo.lineGap = ceil(lineGap*scale);
-	//using lineGap for thickness is pbly abusive but it seems to give good results so far
-	outFontInfo.underline_thickness = outFontInfo.lineGap ;//(int16_t)(1.0f*scale );
-	if(outFontInfo.underline_thickness<1)outFontInfo.underline_thickness = 1;
-	return outFontInfo;
-}
 
 bool TrueTypeFont::getGlyphInfo(const FontInfo& fontInfo, CodePoint_t codePoint, GlyphInfo& outGlyphInfo)
 {
 	assert(m_font != NULL && "TrueTypeFont not initialized" );
-	stbtt_fontinfo* fnt = (stbtt_fontinfo*)m_font;
+	FTHolder* holder = (FTHolder*) m_font;
 
-	int glyphIndex = stbtt_FindGlyphIndex(fnt, codePoint);
-	//TODO check glyph validity ?
+	uint32_t glyph_index = FT_Get_Char_Index( holder->face, codePoint );
+
+
+	int32_t load_flags = FT_LOAD_DEFAULT;
+	FT_Error error = FT_Load_Glyph(  holder->face, glyph_index, load_flags );
+	if(error) { return false; }
+
+	FT_GlyphSlot slot = holder->face->glyph;
+
+	FT_Glyph glyph;
+	error = FT_Get_Glyph( slot, &glyph );
+	if ( error ) { return false; }
 	
-	int x0, y0, x1, y1;
-	const float shift_x = 0;
-	const float shift_y = 0;
-	stbtt_GetGlyphBitmapBoxSubpixel(fnt, glyphIndex, fontInfo.scale, fontInfo.scale, shift_x, shift_y, &x0,&y0,&x1,&y1);
-	// get the bbox of the bitmap centered around the glyph origin; so the
-	// bitmap width is x1-x0, height is y1-y0, and location to place
-	// the bitmap top left is (leftSideBearing*scale, y0).
-	// (Note that the bitmap uses y-increases-down, but the shape uses
-	// y-increases-up, so CodepointBitmapBox and CodepointBox are inverted.)	
+	uint32_t bbox_mode = FT_GLYPH_BBOX_PIXELS;
+	FT_BBox  bbox;
+	FT_Glyph_Get_CBox( glyph, bbox_mode, &bbox );
 		
-	int advanceWidth, leftSideBearing;
-	stbtt_GetGlyphHMetrics(fnt, glyphIndex, &advanceWidth, &leftSideBearing);
+	outGlyphInfo.glyphIndex = glyph_index;
+	outGlyphInfo.width =(uint16_t) (bbox.xMax - bbox.xMin);
+	outGlyphInfo.height = (uint16_t)(bbox.yMax - bbox.yMin);
+	outGlyphInfo.offset_x = (uint16_t)bbox.xMin;
+	outGlyphInfo.offset_y = (uint16_t)bbox.yMin;
+	outGlyphInfo.advance_x = (uint16_t)(slot->advance.x >>6);
+	outGlyphInfo.advance_y = 16;
 
-	int16_t offset_x = leftSideBearing * fontInfo.scale;
-	int16_t offset_y = y0;
-
-	outGlyphInfo.glyphIndex = glyphIndex;
-	if(fontInfo.fontType == FONT_TYPE_DISTANCE)
-	{
-		uint32_t w= x1-x0;
-		uint32_t h= y1-y0;
-		uint32_t dw = 6;
-		uint32_t dh = 6;
-		if(dw<2) dw = 2;
-		if(dh<2) dh = 2;
-		outGlyphInfo.width = w + dw*2;
-		outGlyphInfo.height = h + dh*2;
-		outGlyphInfo.offset_x = offset_x -dw;
-		outGlyphInfo.offset_y = offset_y-dh;
-	}else
-	{
-		outGlyphInfo.width = x1-x0;
-		outGlyphInfo.height = y1-y0;
-		outGlyphInfo.offset_x = offset_x;
-		outGlyphInfo.offset_y = offset_y;
-	}
-
-	outGlyphInfo.advance_x = advanceWidth;	
-	outGlyphInfo.advance_y = (fontInfo.ascender - fontInfo.descender + fontInfo.lineGap);
 	outGlyphInfo.texture_x0 = 0;
 	outGlyphInfo.texture_y0 = 0;
 	outGlyphInfo.texture_x1 = 0;
@@ -134,20 +155,56 @@ bool TrueTypeFont::getGlyphInfo(const FontInfo& fontInfo, CodePoint_t codePoint,
 	return true;
 }
 
-void TrueTypeFont::bakeGlyphAlpha(const FontInfo& fontInfo, const GlyphInfo& glyphInfo, uint8_t* outBuffer)
+void TrueTypeFont::bakeGlyphAlpha(const FontInfo& fontInfo, const GlyphInfo& glyphInfoc, uint8_t* outBuffer)
 {
+	GlyphInfo& glyphInfo = (GlyphInfo&) glyphInfoc;
 	assert(m_font != NULL && "TrueTypeFont not initialized" );
-	stbtt_fontinfo* fnt = (stbtt_fontinfo*)m_font;
-    
-    const float shift_x = 0;
-	const float shift_y = 0;	
-	stbtt_MakeGlyphBitmapSubpixel(fnt, outBuffer, glyphInfo.width, glyphInfo.height, glyphInfo.width, fontInfo.scale, fontInfo.scale, shift_x, shift_y, glyphInfo.glyphIndex);
+	FTHolder* holder = (FTHolder*) m_font;
+
+	int32_t load_flags = FT_LOAD_DEFAULT;
+	FT_Error error = FT_Load_Glyph(  holder->face, glyphInfo.glyphIndex, load_flags );
+	if(error) { return; }
+
+	FT_GlyphSlot slot = holder->face->glyph;
+
+	FT_Glyph glyph;
+	error = FT_Get_Glyph( slot, &glyph );
+	if ( error ) { return; }
+	
+	FT_Vector  origin;
+	origin.x = 0;//32;//=  1/2 pixel in 26.6 format */
+	origin.y = 0;
+	
+	error = FT_Glyph_To_Bitmap(
+			&glyph,
+			FT_RENDER_MODE_NORMAL,
+			&origin,
+			1 );          /* destroy original image == true */
+	if(error){ return; }
+	
+	FT_BitmapGlyph  bit = (FT_BitmapGlyph)glyph;
+	
+	glyphInfo.offset_x = bit->left;
+	glyphInfo.offset_y = -bit->top;
+	 
+	int x = glyphInfo.offset_x;
+	int y = glyphInfo.offset_y;
+	int width = glyphInfo.width;
+	int height = glyphInfo.height;
+	int charsize = 1;
+	int depth=1;
+	int stride = bit->bitmap.pitch;
+	for( int i=0; i<height; ++i )
+    {
+        memcpy(outBuffer+(i*width) * charsize * depth, 
+			bit->bitmap.buffer + (i*stride) * charsize, width * charsize * depth  );
+    }
 }
 
 void TrueTypeFont::bakeGlyphHinted(const FontInfo& fontInfo, const GlyphInfo& glyphInfo, uint32_t* outBuffer)
 {
 	assert(m_font != NULL && "TrueTypeFont not initialized" );
-	stbtt_fontinfo* fnt = (stbtt_fontinfo*)m_font;
+	assert(false);
 }
 
 void make_distance_map( unsigned char *img, unsigned char *outImg, unsigned int width, unsigned int height )
@@ -159,7 +216,7 @@ void make_distance_map( unsigned char *img, unsigned char *outImg, unsigned int 
     double * data    = (double *) calloc( width * height, sizeof(double) );
     double * outside = (double *) calloc( width * height, sizeof(double) );
     double * inside  = (double *) calloc( width * height, sizeof(double) );
-    int i;
+    uint32_t i;
 
     // Convert img into double (data)
     double img_min = 255, img_max = -255;
@@ -218,6 +275,8 @@ void make_distance_map( unsigned char *img, unsigned char *outImg, unsigned int 
 void TrueTypeFont::bakeGlyphDistance(const FontInfo& fontInfo, const GlyphInfo& glyphInfo, uint8_t* outBuffer)
 {
 	assert(m_font != NULL && "TrueTypeFont not initialized" );
+	assert(false);
+	/*
 	stbtt_fontinfo* fnt = (stbtt_fontinfo*)m_font;
 	
 	int x0, y0, x1, y1;
@@ -249,6 +308,7 @@ void TrueTypeFont::bakeGlyphDistance(const FontInfo& fontInfo, const GlyphInfo& 
 	make_distance_map(alphaImg, outBuffer, nw, nh);
 
 	free(alphaImg);
+	*/
 }
 
 }

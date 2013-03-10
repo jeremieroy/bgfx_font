@@ -27,7 +27,7 @@ namespace bgfx_font
 		
 	/// Load a truetype resource from a file, glyph can be generated if the font is loaded
 	TrueTypeHandle loadTrueTypeFont(const char * _fontPath);
-	
+
 	/// Load a truetype resource from a buffer, glyph can be generated if the font is loaded
 	TrueTypeHandle loadTrueTypeFont(const bgfx::Memory* _mem);
 	
@@ -35,11 +35,8 @@ namespace bgfx_font
 	void unloadTrueTypeFont(TrueTypeHandle _handle);
 		
 	/// return a font descriptor to a truetype font whose height is a fixed pixel size	
-	FontHandle createFontByPixelSize(TrueTypeHandle _handle, uint32_t _pixelSize, FontType _fontType = FONT_TYPE_ALPHA);
+	FontHandle createFontByPixelSize(TrueTypeHandle _handle, uint32_t _typefaceIndex, uint32_t _pixelSize, FontType _fontType = FONT_TYPE_ALPHA);
 	
-	/// return a font descriptor to a truetype font whose height is a fixed pixel size using em mapping
-	FontHandle createFontByEmSize(TrueTypeHandle _handle, uint32_t _pixelSize, FontType _fontType = FONT_TYPE_ALPHA);
-
 	/// Load a baked font and return a font descriptor corresponding to a baked font
 	FontHandle loadBakedFont(const char * _fontPath, const char * _fontName);
 	//TODO load from a given buffer

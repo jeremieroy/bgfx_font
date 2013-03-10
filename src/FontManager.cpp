@@ -131,50 +131,38 @@ TrueTypeHandle FontManager::loadTrueTypeFromFile(const char* fontPath, int32_t f
 		}
 		fclose(pFile);
 
-		TrueTypeFont* trueType = new TrueTypeFont();	
-		if(trueType->init(buffer, bufsize, fontIndex))
-		{
-			uint16_t id = m_filesHandles.alloc();
-			assert(id != bx::HandleAlloc::invalid);
-			m_cachedFiles[id].buffer = buffer;
-			m_cachedFiles[id].trueType = trueType;
-			return TrueTypeHandle(id);
-		}
-		delete [] buffer;
-		delete trueType;	
-		return TrueTypeHandle(INVALID_HANDLE_ID);
-	}	
-
+		uint16_t id = m_filesHandles.alloc();
+		assert(id != bx::HandleAlloc::invalid);
+		m_cachedFiles[id].buffer = buffer;
+		m_cachedFiles[id].bufferSize = bufsize;
+		return TrueTypeHandle(id);
+	}
+	//TODO validate font
 	return TrueTypeHandle(INVALID_HANDLE_ID);
 }
 
 TrueTypeHandle FontManager::loadTrueTypeFromMemory(const uint8_t* buffer, uint32_t size, int32_t fontIndex)
 {	
-	TrueTypeFont* ttf = new TrueTypeFont();	
-	if(ttf->init(buffer, size,fontIndex))
-	{
-		uint16_t id = m_filesHandles.alloc();
-		assert(id != bx::HandleAlloc::invalid);
-		m_cachedFiles[id].buffer = NULL;
-		m_cachedFiles[id].trueType = ttf;
-
-		return TrueTypeHandle(id);		
-	}
-	delete ttf;	
-	return TrueTypeHandle(INVALID_HANDLE_ID);
+	uint16_t id = m_filesHandles.alloc();
+	assert(id != bx::HandleAlloc::invalid);
+	m_cachedFiles[id].buffer = new uint8_t[size];
+	m_cachedFiles[id].bufferSize = size;
+	memcpy(m_cachedFiles[id].buffer, buffer, size);
+	
+	//TODO validate font
+	return TrueTypeHandle(id);
 }
 
 void FontManager::unLoadTrueType(TrueTypeHandle handle)
 {
-	assert(handle.isValid());	
-	delete m_cachedFiles[handle.idx].trueType;
+	assert(handle.isValid());
 	delete m_cachedFiles[handle.idx].buffer;
-	m_cachedFiles[handle.idx].trueType = NULL;
+	m_cachedFiles[handle.idx].bufferSize = 0;
 	m_cachedFiles[handle.idx].buffer = NULL;
 	m_filesHandles.free(handle.idx);
 }
 
-FontHandle FontManager::createFontByPixelSize(TrueTypeHandle handle, uint32_t pixelSize, FontType fontType)
+FontHandle FontManager::createFontByPixelSize(TrueTypeHandle handle, uint32_t typefaceIndex, uint32_t pixelSize, FontType fontType)
 {
 	assert(handle.isValid());
 	//search first compatible texture
@@ -190,7 +178,7 @@ FontHandle FontManager::createFontByPixelSize(TrueTypeHandle handle, uint32_t pi
 		{
 			break;
 		}
-		if(texType == TEXTURE_TYPE_RGBA && (fontType == FONT_TYPE_RGBA || fontType == FONT_TYPE_HINTED))
+		if(texType == TEXTURE_TYPE_RGBA && (fontType == FONT_TYPE_RGBA || fontType == FONT_TYPE_LCD))
 		{
 			break;
 		}
@@ -200,57 +188,27 @@ FontHandle FontManager::createFontByPixelSize(TrueTypeHandle handle, uint32_t pi
 	{ 
 		return FontHandle(INVALID_HANDLE_ID);
 	}
-	uint16_t texIDX = texHandles[hdIdx];
-
-	uint16_t fontIdx = m_fontHandles.alloc();
-	assert(fontIdx != bx::HandleAlloc::invalid);
 	
-	m_cachedFonts[fontIdx].trueTypeFont = m_cachedFiles[handle.idx].trueType;
-	m_cachedFonts[fontIdx].fontInfo = m_cachedFonts[fontIdx].trueTypeFont->getFontInfoByPixelSize((float) pixelSize);
+
+	TrueTypeFont* ttf = new TrueTypeFont();
+	if(!ttf->init(  m_cachedFiles[handle.idx].buffer,  m_cachedFiles[handle.idx].bufferSize, typefaceIndex, pixelSize))
+	{
+		delete ttf;
+		return FontHandle(INVALID_HANDLE_ID);
+	}
+
+
+	uint16_t texIDX = texHandles[hdIdx];
+	uint16_t fontIdx = m_fontHandles.alloc();
+	assert(fontIdx != bx::HandleAlloc::invalid);	
+	
+	m_cachedFonts[fontIdx].trueTypeFont = ttf;
+	m_cachedFonts[fontIdx].fontInfo = ttf->getFontInfo();
 	m_cachedFonts[fontIdx].fontInfo.fontType = fontType;
 	m_cachedFonts[fontIdx].fontInfo.textureAtlas = TextureAtlasHandle(texIDX);
 	m_cachedFonts[fontIdx].cachedGlyphs.clear();
 		
 	return FontHandle(fontIdx);
-}
-	
-FontHandle FontManager::createFontByEmSize(TrueTypeHandle handle, uint32_t pixelSize, FontType fontType)
-{
-	assert(handle.isValid());
-	
-	//search first compatible texture
-	//TODO improve this
-	uint16_t texCount = m_atlasHandles.getNumHandles();
-	const uint16_t* texHandles = m_atlasHandles.getHandles();
-	uint16_t texIdx = 0;
-	for(; texIdx < texCount; ++texIdx)
-	{		
-		TextureType texType = m_atlas[ texHandles[texIdx] ].type;
-		if(texType == TEXTURE_TYPE_ALPHA && (fontType == FONT_TYPE_ALPHA || fontType == FONT_TYPE_DISTANCE))
-		{
-			break;
-		}
-		if(texType == TEXTURE_TYPE_RGBA && (fontType == FONT_TYPE_RGBA || fontType == FONT_TYPE_HINTED))
-		{
-			break;
-		}
-	}
-
-	if(texIdx == texCount)
-	{ 
-		return FontHandle(INVALID_HANDLE_ID);
-	}
-
-	uint16_t fontIdx = m_fontHandles.alloc();
-	assert(fontIdx != bx::HandleAlloc::invalid);
-
-	m_cachedFonts[fontIdx].trueTypeFont = m_cachedFiles[handle.idx].trueType;
-	m_cachedFonts[fontIdx].fontInfo = m_cachedFonts[fontIdx].trueTypeFont->getFontInfoByEmSize((float) pixelSize);
-	m_cachedFonts[fontIdx].fontInfo.fontType = fontType;
-	m_cachedFonts[fontIdx].fontInfo.textureAtlas = TextureAtlasHandle(texHandles[texIdx]);
-	m_cachedFonts[fontIdx].cachedGlyphs.clear();
-			
-	return FontHandle(fontIdx);	
 }
 
 FontHandle FontManager::loadBakedFontFromFile(const char* fontPath,  const char* descriptorPath)
@@ -269,6 +227,11 @@ void FontManager::destroyFont(FontHandle _handle)
 {
 	assert(_handle.isValid());
 
+	if(m_cachedFonts[_handle.idx].trueTypeFont != NULL)
+	{
+		delete m_cachedFonts[_handle.idx].trueTypeFont;
+		m_cachedFonts[_handle.idx].trueTypeFont = NULL;
+	}
 	m_cachedFonts[_handle.idx].cachedGlyphs.clear();	
 	m_fontHandles.free(_handle.idx);
 }
