@@ -78,7 +78,9 @@ public:
 
 	/// return a font descriptor whose height is a fixed pixel size	
 	FontHandle createFontByPixelSize(TrueTypeHandle handle, uint32_t typefaceIndex, uint32_t pixelSize, FontType fontType = FONT_TYPE_ALPHA);
-			
+
+	FontHandle createScaledFontToPixelSize(FontHandle _baseFontHandle, uint32_t _pixelSize);
+
 	/// load a baked font (the set of glyph is fixed)
 	/// @return INVALID_HANDLE if the loading fail
 	FontHandle loadBakedFontFromFile(const char* imagePath, const char* descriptorPath);
@@ -116,10 +118,13 @@ private:
 	// cache font data
 	struct CachedFont
 	{
-		CachedFont(){ trueTypeFont = NULL; }
+		CachedFont(){ trueTypeFont = NULL; masterFontHandle.idx = -1; }
 		FontInfo fontInfo;
 		GlyphHash_t cachedGlyphs;
 		TrueTypeFont* trueTypeFont;
+		// an handle to a master font in case of sub distance field font
+		FontHandle masterFontHandle; 
+		int16_t __padding__;
 	};
 	bx::HandleAlloc m_fontHandles;
 	CachedFont* m_cachedFonts;

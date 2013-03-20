@@ -36,6 +36,8 @@ namespace bgfx_font
 		
 	/// return a font descriptor to a truetype font whose height is a fixed pixel size	
 	FontHandle createFontByPixelSize(TrueTypeHandle _handle, uint32_t _typefaceIndex, uint32_t _pixelSize, FontType _fontType = FONT_TYPE_ALPHA);
+
+	FontHandle createScaledFontToPixelSize(FontHandle _baseFontHandle, uint32_t _pixelSize);
 	
 	/// Load a baked font and return a font descriptor corresponding to a baked font
 	FontHandle loadBakedFont(const char * _fontPath, const char * _fontName);

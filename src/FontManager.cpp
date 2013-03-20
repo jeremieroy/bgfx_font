@@ -23,7 +23,7 @@ FontManager::~FontManager()
 	assert(m_fontHandles.getNumHandles() == 0 && "All the fonts must be destroyed before destroying the manager");
 	delete [] m_cachedFonts;
 
-	assert(m_filesHandles.getNumHandles() == 0 && "All the files must be destroyed before destroying the manager");
+	assert(m_filesHandles.getNumHandles() == 0 && "All the font files must be destroyed before destroying the manager");
 	delete [] m_cachedFiles;
 
 	assert(m_atlasHandles.getNumHandles() == 0 && "All the texture atlas must be destroyed before destroying the manager");
@@ -55,8 +55,8 @@ TextureAtlasHandle FontManager::createTextureAtlas(TextureType type, uint16_t wi
 	
 	//TODO use a glyph -_-
 	GlyphInfo glyph;
-	glyph.width=1;
-	glyph.height=1;
+	glyph.width=3;
+	glyph.height=3;
 	assert( addBitmap(m_atlas[atlasIdx], glyph, buffer) );
 		
 	m_atlas[atlasIdx].m_black_x0 = glyph.texture_x0;
@@ -206,8 +206,34 @@ FontHandle FontManager::createFontByPixelSize(TrueTypeHandle handle, uint32_t ty
 	m_cachedFonts[fontIdx].fontInfo = ttf->getFontInfo();
 	m_cachedFonts[fontIdx].fontInfo.fontType = fontType;
 	m_cachedFonts[fontIdx].fontInfo.textureAtlas = TextureAtlasHandle(texIDX);
+	m_cachedFonts[fontIdx].fontInfo.pixelSize = pixelSize;
 	m_cachedFonts[fontIdx].cachedGlyphs.clear();
-		
+	m_cachedFonts[fontIdx].masterFontHandle.idx = -1;
+	return FontHandle(fontIdx);
+}
+
+FontHandle FontManager::createScaledFontToPixelSize(FontHandle _baseFontHandle, uint32_t _pixelSize)
+{
+	assert(_baseFontHandle.isValid());
+	CachedFont& font = m_cachedFonts[_baseFontHandle.idx];
+	FontInfo& fontInfo = font.fontInfo;
+
+	FontInfo newFontInfo = fontInfo;
+	newFontInfo.pixelSize = _pixelSize;
+	newFontInfo.scale = (float)_pixelSize / (float) fontInfo.pixelSize;
+	newFontInfo.ascender = (int16_t) (newFontInfo.ascender * newFontInfo.scale);
+	newFontInfo.descender = (int16_t) (newFontInfo.descender * newFontInfo.scale);
+	newFontInfo.lineGap = (int16_t) (newFontInfo.lineGap * newFontInfo.scale);
+	newFontInfo.underline_thickness = (int16_t) (newFontInfo.underline_thickness * newFontInfo.scale);
+	newFontInfo.underline_position = (int16_t) (newFontInfo.underline_position * newFontInfo.scale);
+
+
+	uint16_t fontIdx = m_fontHandles.alloc();
+	assert(fontIdx != bx::HandleAlloc::invalid);
+	m_cachedFonts[fontIdx].cachedGlyphs.clear();
+	m_cachedFonts[fontIdx].fontInfo = newFontInfo;
+	m_cachedFonts[fontIdx].trueTypeFont = NULL;
+	m_cachedFonts[fontIdx].masterFontHandle = _baseFontHandle;
 	return FontHandle(fontIdx);
 }
 
@@ -245,49 +271,16 @@ bool FontManager::preloadGlyph(FontHandle handle, const wchar_t* _string)
 
 	//if truetype present
 	if(font.trueTypeFont != NULL)
-	{
-		GlyphInfo glyphInfo;
+	{	
 		//parse string
 		for( size_t i=0, end = wcslen(_string) ; i < end; ++i )
 		{
 			//if glyph cached, continue
 			CodePoint_t codePoint = _string[i];
-			GlyphHash_t::iterator iter = font.cachedGlyphs.find(codePoint);
-			if(iter != font.cachedGlyphs.end())
-			{
-				continue;
-			}
-
-			// load glyph info
-			if( !font.trueTypeFont->getGlyphInfo(fontInfo, codePoint, glyphInfo) )
-			{
-				return false;
-			}			
-
-			//assert font is not too big
-			assert(glyphInfo.width * glyphInfo.height * textureAtlas.depth < MAX_FONT_BUFFER_SIZE);
-
-			//bake glyph as bitmap to buffer
-			switch(font.fontInfo.fontType)
-			{
-			case FONT_TYPE_ALPHA:
-				font.trueTypeFont->bakeGlyphAlpha(fontInfo, glyphInfo, m_buffer);
-				break;
-			case FONT_TYPE_DISTANCE:
-				font.trueTypeFont->bakeGlyphDistance(fontInfo, glyphInfo, m_buffer);
-				break;
-			default:
-				assert(false && "TextureType not supported yet");
-			};
-
-			//copy bitmap to texture
-			if(!addBitmap(textureAtlas, glyphInfo, m_buffer) )
+			if(!preloadGlyph(handle, codePoint))
 			{
 				return false;
 			}
-
-			// store cached glyph
-			font.cachedGlyphs[codePoint] = glyphInfo;
 		}
 		return true;
 	}
@@ -300,36 +293,31 @@ bool FontManager::preloadGlyph(FontHandle handle, CodePoint_t codePoint)
 	assert(handle.isValid());	
 	CachedFont& font = m_cachedFonts[handle.idx];
 	FontInfo& fontInfo = font.fontInfo;
-	TextureAtlas& textureAtlas = m_atlas[fontInfo.textureAtlas.idx];	
+	TextureAtlas& textureAtlas = m_atlas[fontInfo.textureAtlas.idx];
+
+	//check if glyph not already present
+	GlyphHash_t::iterator iter = font.cachedGlyphs.find(codePoint);
+	if(iter != font.cachedGlyphs.end())
+	{
+		return true;
+	}
 
 	//if truetype present
 	if(font.trueTypeFont != NULL)
 	{
 		GlyphInfo glyphInfo;
 		
-		GlyphHash_t::iterator iter = font.cachedGlyphs.find(codePoint);
-		if(iter != font.cachedGlyphs.end())
-		{
-			return true;
-		}
-
-		// load glyph info
-		if( !font.trueTypeFont->getGlyphInfo(fontInfo, codePoint, glyphInfo) )
-		{
-			return false;
-		}			
-
-		//assert font is not too big
-		assert(glyphInfo.width * glyphInfo.height * textureAtlas.depth < MAX_FONT_BUFFER_SIZE);
-
 		//bake glyph as bitmap to buffer
 		switch(font.fontInfo.fontType)
 		{
 		case FONT_TYPE_ALPHA:
-			font.trueTypeFont->bakeGlyphAlpha(fontInfo, glyphInfo, m_buffer);
+			font.trueTypeFont->bakeGlyphAlpha(fontInfo,codePoint, glyphInfo, m_buffer);
+			break;
+		case FONT_TYPE_LCD:
+			font.trueTypeFont->bakeGlyphSubpixel(fontInfo,codePoint, glyphInfo, m_buffer);
 			break;
 		case FONT_TYPE_DISTANCE:
-			font.trueTypeFont->bakeGlyphDistance(fontInfo, glyphInfo, m_buffer);
+			font.trueTypeFont->bakeGlyphDistance(fontInfo,codePoint, glyphInfo, m_buffer);
 			break;
 		default:
 			assert(false && "TextureType not supported yet");
@@ -341,9 +329,38 @@ bool FontManager::preloadGlyph(FontHandle handle, CodePoint_t codePoint)
 			return false;
 		}
 
+		glyphInfo.advance_x = (int16_t) ceil(glyphInfo.advance_x * fontInfo.scale);
+		glyphInfo.advance_y = (int16_t) ceil(glyphInfo.advance_y * fontInfo.scale);
+		glyphInfo.offset_x = (int16_t) ceil(glyphInfo.offset_x * fontInfo.scale);
+		glyphInfo.offset_y = (int16_t) ceil(glyphInfo.offset_y * fontInfo.scale);
+		glyphInfo.height = (int16_t) ceil(glyphInfo.height * fontInfo.scale);
+		glyphInfo.width = (int16_t) ceil(glyphInfo.width * fontInfo.scale);
+
 		// store cached glyph
 		font.cachedGlyphs[codePoint] = glyphInfo;
 		return true;
+	}else
+	{
+		//retrieve glyph from parent font if any
+		if(font.masterFontHandle.isValid())
+		{
+			if(preloadGlyph(font.masterFontHandle, codePoint))
+			{
+				GlyphInfo glyphInfo;
+				getGlyphInfo(font.masterFontHandle, codePoint, glyphInfo);
+
+				glyphInfo.advance_x = (int16_t) ceil(glyphInfo.advance_x * fontInfo.scale);
+				glyphInfo.advance_y = (int16_t) ceil(glyphInfo.advance_y * fontInfo.scale);
+				glyphInfo.offset_x = (int16_t) ceil(glyphInfo.offset_x * fontInfo.scale);
+				glyphInfo.offset_y = (int16_t) ceil(glyphInfo.offset_y * fontInfo.scale);
+				glyphInfo.height = (int16_t) ceil(glyphInfo.height * fontInfo.scale);
+				glyphInfo.width = (int16_t) ceil(glyphInfo.width * fontInfo.scale);
+
+				// store cached glyph
+				font.cachedGlyphs[codePoint] = glyphInfo;
+				return true;
+			}
+		}
 	}
 
 	return false;
@@ -377,10 +394,13 @@ bool FontManager::getGlyphInfo(FontHandle fontHandle, CodePoint_t codePoint, Gly
 bgfx::TextureHandle FontManager::createTexture(TextureType textureType, uint16_t width, uint16_t height)
 {
 	//Uncomment this to debug atlas
-	//const bgfx::Memory* mem = bgfx::alloc(width*height);
-	//memset(mem->data, 255, mem->size);
-	const bgfx::Memory* mem = NULL;
-	uint32_t flags = BGFX_TEXTURE_MIN_POINT|BGFX_TEXTURE_MAG_POINT|BGFX_TEXTURE_MIP_POINT|BGFX_TEXTURE_U_CLAMP|BGFX_TEXTURE_V_CLAMP;
+	const bgfx::Memory* mem = bgfx::alloc(width*height);
+	memset(mem->data, 0, mem->size);
+	//const bgfx::Memory* mem = NULL;
+	//BGFX_TEXTURE_MIN_POINT|BGFX_TEXTURE_MAG_POINT|BGFX_TEXTURE_MIP_POINT;
+	//BGFX_TEXTURE_MIN_ANISOTROPIC|BGFX_TEXTURE_MAG_ANISOTROPIC|BGFX_TEXTURE_MIP_POINT
+	//BGFX_TEXTURE_U_CLAMP|BGFX_TEXTURE_V_CLAMP
+	uint32_t flags = 0;//|BGFX_TEXTURE_MIN_POINT|BGFX_TEXTURE_MAG_POINT|BGFX_TEXTURE_MIP_POINT;
 	bgfx::TextureHandle handle;
 	switch(textureType)
 	{
@@ -400,7 +420,7 @@ void FontManager::destroyTexture(bgfx::TextureHandle handle)
 }
 
 bool FontManager::addBitmap(TextureAtlas& atlas, GlyphInfo& glyphInfo, const uint8_t* data)
-{	
+{
 	uint16_t x,y;
 	// We want each bitmap to be separated by at least one black pixel
 	if(!atlas.rectanglePacker.addRectangle(glyphInfo.width + 1, glyphInfo.height + 1,  x, y))
@@ -418,17 +438,25 @@ bool FontManager::addBitmap(TextureAtlas& atlas, GlyphInfo& glyphInfo, const uin
 	glyphInfo.texture_x1 = x+glyphInfo.width;
 	glyphInfo.texture_y1 = y+glyphInfo.height;
 	
-	float texMultX = 32767.0f / (float) (atlas.width);
-	float texMultY = 32767.0f / (float) (atlas.height);
-	glyphInfo.texture_x0 = (int16_t)ceil((glyphInfo.texture_x0) * texMultX);
-	glyphInfo.texture_y0 = (int16_t)ceil((glyphInfo.texture_y0) * texMultY);
-	glyphInfo.texture_x1 = (int16_t)ceil((glyphInfo.texture_x1) * texMultX);
-	glyphInfo.texture_y1 = (int16_t)ceil((glyphInfo.texture_y1) * texMultY);
+	float texMultX = 32767.0f / (2.0f * (float) (atlas.width));
+	float texMultY = 32767.0f / (2.0f * (float) (atlas.height));
 
-	assert(((glyphInfo.texture_x0 * atlas.width)/32767) == x);
-	assert(((glyphInfo.texture_y0 * atlas.height)/32767) == y);
-	assert(((glyphInfo.texture_x1 * atlas.width)/32767) == x+glyphInfo.width);
-	assert(((glyphInfo.texture_y1 * atlas.height)/32767) == y+glyphInfo.height);
+	//float texMultX = 32767.0f / (float) (atlas.width);
+	//float texMultY = 32767.0f / (float) (atlas.height);
+
+	//(2.0f* x * + 1.0f)/fW;
+
+	//this below SHOULD be 0.5, however due to ATI rounding, it seems to be better with 0.375
+	const float centering = 0.0f;//375f; 
+	glyphInfo.texture_x0 = (int16_t)((2.0f*glyphInfo.texture_x0 + centering) * texMultX);
+	glyphInfo.texture_y0 = (int16_t)((2.0f*glyphInfo.texture_y0 + centering) * texMultY);
+	glyphInfo.texture_x1 = (int16_t)((2.0f*glyphInfo.texture_x1 + centering) * texMultX);
+	glyphInfo.texture_y1 = (int16_t)((2.0f*glyphInfo.texture_y1 + centering) * texMultY);
+	
+	//assert(((glyphInfo.texture_x0 * atlas.width)/32767) == x);
+	//assert(((glyphInfo.texture_y0 * atlas.height)/32767) == y);
+	//assert(((glyphInfo.texture_x1 * atlas.width)/32767) == x+glyphInfo.width);
+	//assert(((glyphInfo.texture_y1 * atlas.height)/32767) == y+glyphInfo.height);
 
 	return true;
 }

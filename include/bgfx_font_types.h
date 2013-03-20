@@ -49,7 +49,9 @@ namespace bgfx_font
 	};
 	
 	struct FontInfo
-	{		
+	{	
+		//the font height in pixel 
+		uint16_t pixelSize;
 		/// The pixel extents above the baseline in pixels (typically positive)
 		int16_t ascender;
 		/// The extents below the baseline in pixels (typically negative)
@@ -62,11 +64,9 @@ namespace bgfx_font
 		/// Rendering type used for the font
 		int16_t fontType;
 		/// Id of the texture atlas in which the glyph's bitmap are stored
-		TextureAtlasHandle textureAtlas;		
-		int16_t __padding__;
-
-		/// scale to apply to unscaled coordinates
-		float scale;	
+		TextureAtlasHandle textureAtlas;
+		//scale to apply to glyph data
+		float scale;
 	};
 
 // Glyph metrics:

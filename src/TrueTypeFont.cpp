@@ -11,7 +11,7 @@ const struct {
 */
 #include "FreeType.h"
 #include "edtaa3func.h"
-
+//#include "SEDT.h"
 #include <assert.h>
 #include <math.h>
 
@@ -38,7 +38,7 @@ TrueTypeFont::~TrueTypeFont()
         FT_Done_FreeType( holder->library );
 		delete m_font;
 		m_font = NULL;
-	}	
+	}
 }
 
 bool TrueTypeFont::init(const uint8_t* buffer, uint32_t bufferSize, int32_t fontIndex, uint32_t pixelHeight)
@@ -117,6 +117,7 @@ FontInfo TrueTypeFont::getFontInfo()
 	return outFontInfo;
 }
 
+/*
 
 bool TrueTypeFont::getGlyphInfo(const FontInfo& fontInfo, CodePoint_t codePoint, GlyphInfo& outGlyphInfo)
 {
@@ -139,7 +140,8 @@ bool TrueTypeFont::getGlyphInfo(const FontInfo& fontInfo, CodePoint_t codePoint,
 	uint32_t bbox_mode = FT_GLYPH_BBOX_PIXELS;
 	FT_BBox  bbox;
 	FT_Glyph_Get_CBox( glyph, bbox_mode, &bbox );
-		
+
+
 	outGlyphInfo.glyphIndex = glyph_index;
 	outGlyphInfo.width =(uint16_t) (bbox.xMax - bbox.xMin);
 	outGlyphInfo.height = (uint16_t)(bbox.yMax - bbox.yMin);
@@ -148,63 +150,112 @@ bool TrueTypeFont::getGlyphInfo(const FontInfo& fontInfo, CodePoint_t codePoint,
 	outGlyphInfo.advance_x = (uint16_t)(slot->advance.x >>6);
 	outGlyphInfo.advance_y = 16;
 
+	if(fontInfo.fontType == FONT_TYPE_DISTANCE)
+	{
+		uint32_t w= outGlyphInfo.width;
+		uint32_t h= outGlyphInfo.height;
+		uint32_t dw = 6;
+		uint32_t dh = 6;
+		if(dw<2) dw = 2;
+		if(dh<2) dh = 2;
+		outGlyphInfo.width = w + dw*2;
+		outGlyphInfo.height = h + dh*2;
+		outGlyphInfo.offset_x -= dw;
+		outGlyphInfo.offset_y -= dh;
+	}
+
 	outGlyphInfo.texture_x0 = 0;
 	outGlyphInfo.texture_y0 = 0;
 	outGlyphInfo.texture_x1 = 0;
 	outGlyphInfo.texture_y1 = 0;	
 	return true;
 }
+*/
 
-void TrueTypeFont::bakeGlyphAlpha(const FontInfo& fontInfo, const GlyphInfo& glyphInfoc, uint8_t* outBuffer)
-{
-	GlyphInfo& glyphInfo = (GlyphInfo&) glyphInfoc;
+bool TrueTypeFont::bakeGlyphAlpha(const FontInfo& fontInfo,CodePoint_t codePoint, GlyphInfo& glyphInfo, uint8_t* outBuffer)
+{	
 	assert(m_font != NULL && "TrueTypeFont not initialized" );
 	FTHolder* holder = (FTHolder*) m_font;
-
-	int32_t load_flags = FT_LOAD_DEFAULT;
-	FT_Error error = FT_Load_Glyph(  holder->face, glyphInfo.glyphIndex, load_flags );
-	if(error) { return; }
-
+	
+	glyphInfo.glyphIndex = FT_Get_Char_Index( holder->face, codePoint );
+	
 	FT_GlyphSlot slot = holder->face->glyph;
-
+	FT_Error error = FT_Load_Glyph(  holder->face, glyphInfo.glyphIndex, FT_LOAD_DEFAULT );
+	if(error) { return false; }
+	
 	FT_Glyph glyph;
 	error = FT_Get_Glyph( slot, &glyph );
-	if ( error ) { return; }
+	if ( error ) { return false; }
+		
+	error = FT_Glyph_To_Bitmap( &glyph, FT_RENDER_MODE_NORMAL, 0, 1 );
+	if(error){ return false; }
 	
-	FT_Vector  origin;
-	origin.x = 0;//32;//=  1/2 pixel in 26.6 format */
-	origin.y = 0;
-	
-	error = FT_Glyph_To_Bitmap(
-			&glyph,
-			FT_RENDER_MODE_NORMAL,
-			&origin,
-			1 );          /* destroy original image == true */
-	if(error){ return; }
-	
-	FT_BitmapGlyph  bit = (FT_BitmapGlyph)glyph;
-	
-	glyphInfo.offset_x = bit->left;
-	glyphInfo.offset_y = -bit->top;
+	FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyph;
+		
+	glyphInfo.offset_x = bitmap->left;
+	glyphInfo.offset_y = -bitmap->top;	
+	glyphInfo.width = bitmap->bitmap.width;
+	glyphInfo.height = bitmap->bitmap.rows;
+	glyphInfo.advance_x = (uint16_t)(slot->advance.x >>6);
+	glyphInfo.advance_y = (uint16_t)(slot->advance.y >>6);
 	 
 	int x = glyphInfo.offset_x;
 	int y = glyphInfo.offset_y;
-	int width = glyphInfo.width;
-	int height = glyphInfo.height;
+	int w = glyphInfo.width;
+	int h = glyphInfo.height;
 	int charsize = 1;
 	int depth=1;
-	int stride = bit->bitmap.pitch;
-	for( int i=0; i<height; ++i )
+	int stride = bitmap->bitmap.pitch;
+	for( int i=0; i<h; ++i )
     {
-        memcpy(outBuffer+(i*width) * charsize * depth, 
-			bit->bitmap.buffer + (i*stride) * charsize, width * charsize * depth  );
+        memcpy(outBuffer+(i*w) * charsize * depth, 
+			bitmap->bitmap.buffer + (i*stride) * charsize, w * charsize * depth  );
     }
+	FT_Done_Glyph(glyph);
+	return true;
 }
 
-void TrueTypeFont::bakeGlyphHinted(const FontInfo& fontInfo, const GlyphInfo& glyphInfo, uint32_t* outBuffer)
+bool TrueTypeFont::bakeGlyphSubpixel(const FontInfo& fontInfo,CodePoint_t codePoint, GlyphInfo& glyphInfo, uint8_t* outBuffer)
 {
 	assert(m_font != NULL && "TrueTypeFont not initialized" );
-	assert(false);
+	FTHolder* holder = (FTHolder*) m_font;
+	
+	glyphInfo.glyphIndex = FT_Get_Char_Index( holder->face, codePoint );
+	
+	FT_GlyphSlot slot = holder->face->glyph;
+	FT_Error error = FT_Load_Glyph(  holder->face, glyphInfo.glyphIndex, FT_LOAD_DEFAULT );
+	if(error) { return false; }
+	
+	FT_Glyph glyph;
+	error = FT_Get_Glyph( slot, &glyph );
+	if ( error ) { return false; }
+		
+	error = FT_Glyph_To_Bitmap( &glyph, FT_RENDER_MODE_LCD, 0, 1 );
+	if(error){ return false; }
+	
+	FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyph;
+		
+	glyphInfo.offset_x = bitmap->left;
+	glyphInfo.offset_y = -bitmap->top;	
+	glyphInfo.width = bitmap->bitmap.width;
+	glyphInfo.height = bitmap->bitmap.rows;
+	glyphInfo.advance_x = (uint16_t)(slot->advance.x >>6);
+	glyphInfo.advance_y = (uint16_t)(slot->advance.y >>6);
+	 
+	int x = glyphInfo.offset_x;
+	int y = glyphInfo.offset_y;
+	int w = glyphInfo.width;
+	int h = glyphInfo.height;
+	int charsize = 1;
+	int depth=3;
+	int stride = bitmap->bitmap.pitch;
+	for( int i=0; i<h; ++i )
+    {
+        memcpy(outBuffer+(i*w) * charsize * depth, 
+			bitmap->bitmap.buffer + (i*stride) * charsize, w * charsize * depth  );
+    }
+	FT_Done_Glyph(glyph);
+	return true;
 }
 
 void make_distance_map( unsigned char *img, unsigned char *outImg, unsigned int width, unsigned int height )
@@ -272,43 +323,97 @@ void make_distance_map( unsigned char *img, unsigned char *outImg, unsigned int 
     free( inside );
 }
 
-void TrueTypeFont::bakeGlyphDistance(const FontInfo& fontInfo, const GlyphInfo& glyphInfo, uint8_t* outBuffer)
-{
+
+bool TrueTypeFont::bakeGlyphDistance(const FontInfo& fontInfo, CodePoint_t codePoint, GlyphInfo& glyphInfo, uint8_t* outBuffer)
+{	
 	assert(m_font != NULL && "TrueTypeFont not initialized" );
-	assert(false);
+	FTHolder* holder = (FTHolder*) m_font;
+	
+	glyphInfo.glyphIndex = FT_Get_Char_Index( holder->face, codePoint );
+	
+	FT_Int32 loadMode = FT_LOAD_DEFAULT; //FT_LOAD_TARGET_MONO;
+	FT_Render_Mode renderMode = FT_RENDER_MODE_NORMAL;//FT_RENDER_MODE_MONO
+
+	FT_GlyphSlot slot = holder->face->glyph;
+	FT_Error error = FT_Load_Glyph(  holder->face, glyphInfo.glyphIndex, loadMode );
+	if(error) { return false; }
+	
+	FT_Glyph glyph;
+	error = FT_Get_Glyph( slot, &glyph );
+	if ( error ) { return false; }
+	
+	error = FT_Glyph_To_Bitmap( &glyph, renderMode, 0, 1 );
+	if(error){ return false; }
+	
+	FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyph;
+		
+	glyphInfo.offset_x = bitmap->left;
+	glyphInfo.offset_y = -bitmap->top;	
+	glyphInfo.width = bitmap->bitmap.width;
+	glyphInfo.height = bitmap->bitmap.rows;
+	glyphInfo.advance_x = (uint16_t)(slot->advance.x >>6);
+	glyphInfo.advance_y = (uint16_t)(slot->advance.y >>6);
+	 
+	int x = glyphInfo.offset_x;
+	int y = glyphInfo.offset_y;
+	int w = glyphInfo.width;
+	int h = glyphInfo.height;
+	int charsize = 1;
+	int depth=1;
+	int stride = bitmap->bitmap.pitch;
+	
 	/*
-	stbtt_fontinfo* fnt = (stbtt_fontinfo*)m_font;
+	const uint8_t* src = bitmap->bitmap.buffer;
+	for( int y=0; y<h; ++y )
+	{		
+		for( int x=0; x<w; ++x )
+		{
+			uint32_t idx = y*w+x;
+			outBuffer[idx] = ((src[x / 8]) & (1 << (7 - (x % 8)))) ? 255 : 0;
+		}
+		src+=stride;
+	}*/
 	
-	int x0, y0, x1, y1;
-	const float shift_x = 0;
-	const float shift_y = 0;
-	stbtt_GetGlyphBitmapBoxSubpixel(fnt, glyphInfo.glyphIndex, fontInfo.scale, fontInfo.scale, shift_x, shift_y, &x0,&y0,&x1,&y1);
-	uint32_t w= x1-x0;
-	uint32_t h= y1-y0;
-	stbtt_MakeGlyphBitmapSubpixel(fnt, outBuffer, w, h, w, fontInfo.scale, fontInfo.scale, shift_x, shift_y, glyphInfo.glyphIndex);
 	
-	uint32_t dw = 6;
-	uint32_t dh = 6;	
-	if(dw<2) dw = 2;
-	if(dh<2) dh = 2;
-	
-	uint32_t nw = w + dw*2;
-	uint32_t nh = h + dh*2;
-	assert(nw*nh < 128*128);
-	uint32_t buffSize = nw*nh*sizeof(uint8_t);
-	uint8_t * alphaImg = (uint8_t *)  malloc( buffSize );	
-	memset(alphaImg, 0, nw*nh*sizeof(uint8_t));
+	for( int i=0; i<h; ++i )
+    {	
 
-	//move it
-	
-	for(uint32_t  i= dh; i< nh-dh; ++i)
+        memcpy(outBuffer+(i*w) * charsize * depth, 
+			bitmap->bitmap.buffer + (i*stride) * charsize, w * charsize * depth  );
+    }
+	FT_Done_Glyph(glyph);
+		
+	if(w*h >0)
 	{
-		memcpy(alphaImg+i*nw+dw, outBuffer+(i-dh)*w, w);
-	}
-	make_distance_map(alphaImg, outBuffer, nw, nh);
+		uint32_t dw = 6;
+		uint32_t dh = 6;	
+		if(dw<2) dw = 2;
+		if(dh<2) dh = 2;
+	
+		uint32_t nw = w + dw*2;
+		uint32_t nh = h + dh*2;
+		assert(nw*nh < 128*128);
+		uint32_t buffSize = nw*nh*sizeof(uint8_t);
+	
+		uint8_t * alphaImg = (uint8_t *)  malloc( buffSize );
+		memset(alphaImg, 0, nw*nh*sizeof(uint8_t));
 
-	free(alphaImg);
-	*/
+		//copy the original buffer to the temp one
+		for(uint32_t  i= dh; i< nh-dh; ++i)
+		{
+			memcpy(alphaImg+i*nw+dw, outBuffer+(i-dh)*w, w);
+		}
+	
+		make_distance_map(alphaImg, outBuffer, nw, nh);
+		free(alphaImg);	
+		
+		glyphInfo.offset_x -= dw;
+		glyphInfo.offset_y -= dh;
+		glyphInfo.width = nw ;
+		glyphInfo.height = nh;
+	}
+	
+	return true;	
 }
 
 }

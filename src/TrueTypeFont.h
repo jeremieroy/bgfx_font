@@ -22,17 +22,17 @@ public:
 
 	/// return the details of a glyph
 	/// return false if the glyph couldn't be found
-	bool getGlyphInfo(const FontInfo& fontInfo, CodePoint_t codePoint, GlyphInfo& outGlyphInfo);
+	//bool getGlyphInfo(const FontInfo& fontInfo, CodePoint_t codePoint, GlyphInfo& outGlyphInfo);
 
 	/// raster a glyph as 8bit alpha to a memory buffer
 	/// @ remark buffer min size: glyphInfo.width * glyphInfo * height * sizeof(char)
-    void bakeGlyphAlpha(const FontInfo& fontInfo, const GlyphInfo& glyphInfo, uint8_t* outBuffer);
+    bool bakeGlyphAlpha(const FontInfo& fontInfo,CodePoint_t codePoint, GlyphInfo& outGlyphInfo, uint8_t* outBuffer);
 
 	/// raster a glyph as 32bit rgba to a memory buffer
 	/// @ remark buffer min size: glyphInfo.width * glyphInfo * height * sizeof(uint32_t)
-    void bakeGlyphHinted(const FontInfo& fontInfo, const GlyphInfo& glyphInfo, uint32_t* outBuffer);
+    bool bakeGlyphSubpixel(const FontInfo& fontInfo,CodePoint_t codePoint, GlyphInfo& outGlyphInfo, uint8_t* outBuffer);
 
-	void bakeGlyphDistance(const FontInfo& fontInfo, const GlyphInfo& glyphInfo, uint8_t* outBuffer);
+	bool bakeGlyphDistance(const FontInfo& fontInfo,CodePoint_t codePoint, GlyphInfo& outGlyphInfo, uint8_t* outBuffer);
 
 private:
 	void* m_font;

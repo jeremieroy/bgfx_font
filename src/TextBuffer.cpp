@@ -195,9 +195,9 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		m_lineAscender = font.ascender;
 		m_lineGap = font.lineGap;		
 		
-		int16_t y = m_penY;
+		//int16_t y = m_penY;
 		m_penY += txtDecals;
-		verticalCenterLastLine(txtDecals, m_penY - m_lineAscender, m_penY - m_lineDescender+m_lineGap);		
+		verticalCenterLastLine(txtDecals, (int16_t) (m_penY - m_lineAscender), (int16_t) (m_penY - m_lineDescender+m_lineGap));		
     }
 			
 	//handle kerning
@@ -208,13 +208,13 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
         kerning = texture_glyph_get_kerning( glyph, previous );
     }
 	*/
-    m_penX += kerning;
+	m_penX += kerning * font.scale;
 	
 	if( m_styleFlags & STYLE_BACKGROUND && m_backgroundColor & 0xFF000000)
 	{
-		int16_t x0 = floor( m_penX - kerning );
-		int16_t y0 = ( m_penY  - m_lineAscender);
-		int16_t x1 = (int16_t)ceil( (float)x0 + (glyphInfo.advance_x) * font.scale);
+		int16_t x0 = (int16_t)floor( m_penX - kerning );
+		int16_t y0 = (int16_t)( m_penY  - m_lineAscender);
+		int16_t x1 = (int16_t)ceil( (float)x0 + (glyphInfo.advance_x));
 		int16_t y1 = (int16_t)( m_penY - m_lineDescender + m_lineGap );
 
 		int16_t s0 = m_black_x0;
@@ -239,9 +239,9 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		
 	if( m_styleFlags & STYLE_UNDERLINE && m_underlineColor & 0xFF000000)
 	{
-		int16_t x0 = floor( m_penX - kerning );
+		int16_t x0 = (int16_t)floor( m_penX - kerning );
 		int16_t y0 = (int16_t)ceil(m_penY - m_lineDescender/2 );
-		int16_t x1 = (int16_t)ceil( (float)x0 + (glyphInfo.advance_x) * font.scale);
+		int16_t x1 = (int16_t)ceil( (float)x0 + (glyphInfo.advance_x));
 		int16_t y1 = y0+font.underline_thickness;
 
 		int16_t s0 = m_black_x0;
@@ -266,9 +266,9 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 	
 	if( m_styleFlags & STYLE_OVERLINE && m_overlineColor & 0xFF000000)
 	{
-		int16_t x0 = floor( m_penX - kerning );
+		int16_t x0 = (int16_t)floor( m_penX - kerning );
 		int16_t y0 = (int16_t)ceil(m_penY - font.ascender );
-		int16_t x1 = (int16_t)ceil( (float)x0 + (glyphInfo.advance_x) * font.scale);
+		int16_t x1 = (int16_t)ceil( (float)x0 + (glyphInfo.advance_x));
 		int16_t y1 = y0+font.underline_thickness;
 
 		int16_t s0 = m_black_x0;
@@ -293,9 +293,9 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		
 	if( m_styleFlags & STYLE_STRIKE_THROUGH && m_strikeThroughColor & 0xFF000000)
 	{
- 		int16_t x0 = floor( m_penX - kerning );
+ 		int16_t x0 = (int16_t)floor( m_penX - kerning );
 		int16_t y0 = (int16_t)ceil(m_penY - font.ascender/3 );
-		int16_t x1 = (int16_t)ceil( (float)x0 + (glyphInfo.advance_x) * font.scale);
+		int16_t x1 = (int16_t)ceil( (float)x0 + (glyphInfo.advance_x) );
 		int16_t y1 = y0+font.underline_thickness;
 
 		int16_t s0 = m_black_x0;
@@ -320,9 +320,9 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 
 
 	//handle glyph
-	float x0_precise = m_penX + (glyphInfo.offset_x);// * font.scale);
+	float x0_precise = m_penX + (glyphInfo.offset_x);
 	int16_t x0 = (int16_t)( x0_precise);
-	int16_t y0 = (int16_t)( m_penY + (glyphInfo.offset_y));// * font.scale ));
+	int16_t y0 = (int16_t)( m_penY + (glyphInfo.offset_y));
 	int16_t x1 = (int16_t)( x0 + glyphInfo.width );
 	int16_t y1 = (int16_t)( y0 + glyphInfo.height );
 
@@ -347,8 +347,8 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 	m_vertexCount += 4;
 	m_indexCount += 6;
 	
-	//TODO remove the ceil when doing subpixel rendering
-	m_penX += ceil(glyphInfo.advance_x * font.scale);
+	//TODO see what to do when doing subpixel rendering
+	m_penX += glyphInfo.advance_x;
 }
 
 void TextBuffer::verticalCenterLastLine(int16_t dy, uint16_t top, uint16_t bottom)
