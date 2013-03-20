@@ -1,3 +1,6 @@
+/* Copyright 2013 Jeremie Roy. All rights reserved.
+ * License: http://www.opensource.org/licenses/BSD-2-Clause
+*/
 #include "TrueTypeFont.h"
 /*
 #undef __FTERRORS_H__

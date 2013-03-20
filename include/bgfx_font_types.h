@@ -1,3 +1,6 @@
+/* Copyright 2013 Jeremie Roy. All rights reserved.
+ * License: http://www.opensource.org/licenses/BSD-2-Clause
+*/
 #pragma once
 #include <stdint.h> // uint32_t
 

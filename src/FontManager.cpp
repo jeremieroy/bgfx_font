@@ -1,3 +1,6 @@
+/* Copyright 2013 Jeremie Roy. All rights reserved.
+ * License: http://www.opensource.org/licenses/BSD-2-Clause
+*/
 #include <assert.h>
 #include "FontManager.h"
 #include <math.h>
