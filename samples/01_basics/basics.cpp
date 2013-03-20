@@ -188,10 +188,11 @@ int _main_(int _argc, char** _argv)
 		
 		float view[16];
 		float proj[16];
-		mtxLookAt(view, eye, at);
-		
-		//setup a top-left ortho matrix for screen space drawing
-		mtxOrtho(proj, 0,width,height, 0,-1.0f, 1.0f);
+		mtxLookAt(view, eye, at);		
+		//setup a top-left ortho matrix for screen space drawing		
+		float centering = 0.5f;
+		mtxOrtho(proj, centering, width+centering,height+centering, centering,-1.0f, 1.0f);
+
 		// Set view and projection matrix for view 0.
 		bgfx::setViewTransform(0, view, proj);
 
