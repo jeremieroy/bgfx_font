@@ -37,12 +37,6 @@ public:
 	/// append a wide char unicode string to the buffer using current pen position and color
 	void appendText(FontHandle fontHandle, const wchar_t * _string);
 
-	/// append an ASCII/utf-8 string to the buffer using printf formatting and current pen position and color
-	void appendTextPrintf(FontHandle fontHandle, const char * format, ...);
-
-	/// append wide char unicode string to the buffer using printf formatting and current pen position and color
-	void appendTextPrintf(FontHandle fontHandle, const wchar_t * format, ...);
-
 	/// Clear the text buffer and reset its state (pen/color)
 	void clearTextBuffer();
 	
@@ -66,7 +60,7 @@ public:
 
 private:
 	void appendGlyph(CodePoint_t codePoint, const FontInfo& font, const GlyphInfo& glyphInfo);
-	void verticalCenterLastLine(int16_t txtDecalY, uint16_t top, uint16_t bottom);
+	void verticalCenterLastLine(float txtDecalY, float top, float bottom);
 	uint32_t toABGR(uint32_t rgba) 
 	{ 
 		return (((rgba >> 0) & 0xff) << 24) |  
@@ -90,14 +84,15 @@ private:
 	float m_originX;
 	float m_originY;	
 
-	int16_t m_lineAscender;
-	int16_t m_lineDescender;
-	int16_t m_lineGap;
+	float m_lineAscender;
+	float m_lineDescender;
+	float m_lineGap;
 	
 	///
 	FontManager* m_fontManager;
 	bgfx::TextureHandle m_textureHandle;
-	uint16_t padding__;
+	uint16_t __padding__;
+
 	uint16_t m_textureWidth;
 	uint16_t m_textureHeight;
 	int16_t m_black_x0;
@@ -106,7 +101,7 @@ private:
 	int16_t m_black_y1;
 
 
-	void setVertex(size_t i, int16_t _x, int16_t _y, int16_t _u, int16_t _v, uint32_t _rgba, uint8_t style = STYLE_NORMAL)
+	void setVertex(size_t i, float _x, float _y, int16_t _u, int16_t _v, uint32_t _rgba, uint8_t style = STYLE_NORMAL)
 	{
 		m_vertexBuffer[i].x=_x;
 		m_vertexBuffer[i].y=_y;
@@ -118,7 +113,7 @@ private:
 
 	struct TextVertex
 	{		
-		int16_t x,y;
+		float x,y;
 		int16_t u,v;
 		uint32_t rgba;
 	};

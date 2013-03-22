@@ -52,20 +52,23 @@ namespace bgfx_font
 	};
 	
 	struct FontInfo
-	{	
+	{
 		//the font height in pixel 
 		uint16_t pixelSize;
-		/// The pixel extents above the baseline in pixels (typically positive)
-		int16_t ascender;
-		/// The extents below the baseline in pixels (typically negative)
-		int16_t descender;
-		/// The spacing in pixels between one row's descent and the next row's ascent
-		int16_t lineGap;
-		/// The thickness of the under/hover/striketrough line in pixels
-		int16_t underline_thickness;
-		int16_t underline_position;
 		/// Rendering type used for the font
 		int16_t fontType;
+
+		/// The pixel extents above the baseline in pixels (typically positive)
+		float ascender;
+		/// The extents below the baseline in pixels (typically negative)
+		float descender;
+		/// The spacing in pixels between one row's descent and the next row's ascent
+		float lineGap;
+		/// The thickness of the under/hover/striketrough line in pixels
+		float underline_thickness;
+		/// The position of the underline relatively to the baseline
+		float underline_position;
+		
 		/// Id of the texture atlas in which the glyph's bitmap are stored
 		TextureAtlasHandle textureAtlas;
 		//scale to apply to glyph data
@@ -108,7 +111,7 @@ namespace bgfx_font
 
 	/// A structure that describe a glyph.	
 	struct GlyphInfo
-	{			
+	{
 		/// Index for faster retrieval
 		int32_t glyphIndex;
 	
@@ -119,20 +122,20 @@ namespace bgfx_font
 		uint16_t height;
 	
 		/// Glyph's left offset in pixels
-		int16_t offset_x;
+		float offset_x;
 
 		/// Glyph's top offset in pixels
 		/// Remember that this is the distance from the baseline to the top-most
 		/// glyph scan line, upwards y coordinates being positive.
-		int16_t offset_y;
+		float offset_y;
 
-		/// For horizontal text layouts, this is the unscaled horizontal distance 
+		/// For horizontal text layouts, this is the unscaled horizontal distance in pixels
 		/// used to increment the pen position when the glyph is drawn as part of a string of text.
-		int16_t advance_x;
+		float advance_x;
 	
-		/// For vertical text layouts, this is the unscaled vertical distance in unscaled coordinates 
+		/// For vertical text layouts, this is the unscaled vertical distance in pixels
 		/// used to increment the pen position when the glyph is drawn as part of a string of text.
-		int16_t advance_y;
+		float advance_y;
 
 		/// texture coordinates are expressed in a normalized ratio of the texture size 
 		/// that map [0,width] and  [0,height]  to [0;32767]
@@ -149,7 +152,7 @@ namespace bgfx_font
 		/// bottom texture coordinates 
 		int16_t texture_y1;
 		
-		/// TODO handle kerning		
+		/// TODO handle kerning
 	};
 	
 	

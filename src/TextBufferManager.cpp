@@ -61,7 +61,7 @@ void TextBufferManager::init(FontManager* fontManager, const char* shaderPath)
 	m_fontManager = fontManager;
 
 	m_vertexDecl.begin();
-	m_vertexDecl.add(bgfx::Attrib::Position, 2, bgfx::AttribType::Int16);
+	m_vertexDecl.add(bgfx::Attrib::Position, 2, bgfx::AttribType::Float);
 	m_vertexDecl.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Int16, true);
 	m_vertexDecl.add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true);
 	m_vertexDecl.end();

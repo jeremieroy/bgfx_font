@@ -142,8 +142,10 @@ int _main_(int _argc, char** _argv)
 	bgfx_font::FontHandle fonts[64];
 	fonts[fontsCount++] = distance_font;
 	//generate various sub distance field fonts at various size
-	for(int i = 64; i < 257; i+=64)
+	int step=4;
+	for(int i = 64; i>1 ; i-=step)
 	{		
+		if(i<32) step = 2;
 		//instantiate a usable font
 		bgfx_font::FontHandle font = bgfx_font::createScaledFontToPixelSize(distance_font, i);
 		fonts[fontsCount++] = font;

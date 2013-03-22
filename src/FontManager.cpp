@@ -11,7 +11,7 @@ namespace bgfx_font
 const uint16_t MAX_OPENED_FILES = 64;
 const uint16_t MAX_OPENED_FONT = 64;
 const uint16_t MAX_TEXTURE_ATLAS = 4;
-const uint32_t MAX_FONT_BUFFER_SIZE = 128*128*4;
+const uint32_t MAX_FONT_BUFFER_SIZE = 512*512*4;
 
 FontManager::FontManager():m_filesHandles(MAX_OPENED_FILES), m_fontHandles(MAX_OPENED_FONT), m_atlasHandles(MAX_TEXTURE_ATLAS)
 {
@@ -224,11 +224,11 @@ FontHandle FontManager::createScaledFontToPixelSize(FontHandle _baseFontHandle, 
 	FontInfo newFontInfo = fontInfo;
 	newFontInfo.pixelSize = _pixelSize;
 	newFontInfo.scale = (float)_pixelSize / (float) fontInfo.pixelSize;
-	newFontInfo.ascender = (int16_t) (newFontInfo.ascender * newFontInfo.scale);
-	newFontInfo.descender = (int16_t) (newFontInfo.descender * newFontInfo.scale);
-	newFontInfo.lineGap = (int16_t) (newFontInfo.lineGap * newFontInfo.scale);
-	newFontInfo.underline_thickness = (int16_t) (newFontInfo.underline_thickness * newFontInfo.scale);
-	newFontInfo.underline_position = (int16_t) (newFontInfo.underline_position * newFontInfo.scale);
+	newFontInfo.ascender = (newFontInfo.ascender * newFontInfo.scale);
+	newFontInfo.descender = (newFontInfo.descender * newFontInfo.scale);
+	newFontInfo.lineGap = (newFontInfo.lineGap * newFontInfo.scale);
+	newFontInfo.underline_thickness = (newFontInfo.underline_thickness * newFontInfo.scale);
+	newFontInfo.underline_position = (newFontInfo.underline_position * newFontInfo.scale);
 
 
 	uint16_t fontIdx = m_fontHandles.alloc();
@@ -332,12 +332,12 @@ bool FontManager::preloadGlyph(FontHandle handle, CodePoint_t codePoint)
 			return false;
 		}
 
-		glyphInfo.advance_x = (int16_t) ceil(glyphInfo.advance_x * fontInfo.scale);
-		glyphInfo.advance_y = (int16_t) ceil(glyphInfo.advance_y * fontInfo.scale);
-		glyphInfo.offset_x = (int16_t) ceil(glyphInfo.offset_x * fontInfo.scale);
-		glyphInfo.offset_y = (int16_t) ceil(glyphInfo.offset_y * fontInfo.scale);
-		glyphInfo.height = (int16_t) ceil(glyphInfo.height * fontInfo.scale);
-		glyphInfo.width = (int16_t) ceil(glyphInfo.width * fontInfo.scale);
+		glyphInfo.advance_x = (glyphInfo.advance_x * fontInfo.scale);
+		glyphInfo.advance_y = (glyphInfo.advance_y * fontInfo.scale);
+		glyphInfo.offset_x = (glyphInfo.offset_x * fontInfo.scale);
+		glyphInfo.offset_y = (glyphInfo.offset_y * fontInfo.scale);
+		glyphInfo.height = (glyphInfo.height * fontInfo.scale);
+		glyphInfo.width =  (glyphInfo.width * fontInfo.scale);
 
 		// store cached glyph
 		font.cachedGlyphs[codePoint] = glyphInfo;
@@ -352,12 +352,12 @@ bool FontManager::preloadGlyph(FontHandle handle, CodePoint_t codePoint)
 				GlyphInfo glyphInfo;
 				getGlyphInfo(font.masterFontHandle, codePoint, glyphInfo);
 
-				glyphInfo.advance_x = (int16_t) ceil(glyphInfo.advance_x * fontInfo.scale);
-				glyphInfo.advance_y = (int16_t) ceil(glyphInfo.advance_y * fontInfo.scale);
-				glyphInfo.offset_x = (int16_t) ceil(glyphInfo.offset_x * fontInfo.scale);
-				glyphInfo.offset_y = (int16_t) ceil(glyphInfo.offset_y * fontInfo.scale);
-				glyphInfo.height = (int16_t) ceil(glyphInfo.height * fontInfo.scale);
-				glyphInfo.width = (int16_t) ceil(glyphInfo.width * fontInfo.scale);
+				glyphInfo.advance_x = (glyphInfo.advance_x * fontInfo.scale);
+				glyphInfo.advance_y = (glyphInfo.advance_y * fontInfo.scale);
+				glyphInfo.offset_x = (glyphInfo.offset_x * fontInfo.scale);
+				glyphInfo.offset_y = (glyphInfo.offset_y * fontInfo.scale);
+				glyphInfo.height = (glyphInfo.height * fontInfo.scale);
+				glyphInfo.width = (glyphInfo.width * fontInfo.scale);
 
 				// store cached glyph
 				font.cachedGlyphs[codePoint] = glyphInfo;
@@ -403,7 +403,7 @@ bgfx::TextureHandle FontManager::createTexture(TextureType textureType, uint16_t
 	//BGFX_TEXTURE_MIN_POINT|BGFX_TEXTURE_MAG_POINT|BGFX_TEXTURE_MIP_POINT;
 	//BGFX_TEXTURE_MIN_ANISOTROPIC|BGFX_TEXTURE_MAG_ANISOTROPIC|BGFX_TEXTURE_MIP_POINT
 	//BGFX_TEXTURE_U_CLAMP|BGFX_TEXTURE_V_CLAMP
-	uint32_t flags = 0;//|BGFX_TEXTURE_MIN_POINT|BGFX_TEXTURE_MAG_POINT|BGFX_TEXTURE_MIP_POINT;
+	uint32_t flags = BGFX_TEXTURE_MIN_ANISOTROPIC|BGFX_TEXTURE_MAG_ANISOTROPIC|BGFX_TEXTURE_MIP_POINT;
 	bgfx::TextureHandle handle;
 	switch(textureType)
 	{
