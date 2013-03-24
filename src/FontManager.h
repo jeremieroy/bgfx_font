@@ -16,8 +16,6 @@
 #include "bgfx_font_types.h"
 #include "TrueTypeFont.h"
 #include "RectanglePacker.h"
-//#include "TextureAtlas.h"
-
 #include <bx/handlealloc.h>
 #include <bgfx.h>
 
@@ -52,21 +50,20 @@ namespace bgfx_font
 class FontManager
 {
 public:
-	FontManager();
+	///create the font manager using an external texture cube
+	/// @remark format must be BGRA8 and linear filtering must be ON for distance field font.
+	FontManager(uint32_t textureSideWidth, bgfx::TextureHandle _handle);
+	//create the font manager and create the texture cube as BGRA8 with linear filtering
+	FontManager(uint32_t textureSideWidth=512);
 	~FontManager();
-
-	/// Add a texture atlas resource to the font manager
-	/// The texture will be used as a texture atlas for storing glyph data
-	/// The ownership of the texture provider stays external
-	TextureAtlasHandle createTextureAtlas(TextureType type, uint16_t width, uint16_t height);
+		
+	/// retrieve the textureHandle (cube) used by the font manager (e.g. to visualize it)
+	bgfx::TextureHandle getTextureHandle() { return m_textureHandle; }
+	/// retrieve the rectangle packer used by the font manager (e.g. to add stuff to it)
+	RectanglePackerCube& getRectanglePacker() {return m_packer; }
+		
+	GlyphInfo& getBlackGlyph(){ return m_blackGlyph; }
 	
-	/// retrieve a texture resource using the atlas handle
-	bgfx::TextureHandle getTextureHandle(TextureAtlasHandle handle);
-	void getTextureSize(TextureAtlasHandle handle, uint16_t& width, uint16_t& height);
-	void getBlackGlyphUV(TextureAtlasHandle handle, int16_t& x0, int16_t& y0, int16_t& x1, int16_t& y1);
-	/// destroy a texture atlas
-	void destroyTextureAtlas(TextureAtlasHandle handle);
-
 	/// load a TrueType font from a file path
 	/// @return INVALID_HANDLE if the loading fail
 	TrueTypeHandle loadTrueTypeFromFile(const char* fontPath, int32_t fontIndex = 0);
@@ -115,6 +112,9 @@ public:
 	/// @return true if the Glyph is available
 	bool getGlyphInfo(FontHandle fontHandle, CodePoint_t codePoint, GlyphInfo& outInfo);
 private:
+
+	void createAtlas(uint32_t textureSideWidth);
+	void initAtlas(uint32_t textureSideWidth);
 	
 	
 	typedef stl::unordered_map<CodePoint_t, GlyphInfo> GlyphHash_t;	
@@ -140,31 +140,18 @@ private:
 	bx::HandleAlloc m_filesHandles;
 	CachedFile* m_cachedFiles;	
 	
-	struct TextureAtlas
-	{
-		TextureType type;
-		RectanglePacker rectanglePacker;
-		bgfx::TextureHandle textureHandle;
+	//texture cube data
+	uint16_t m_textureWidth;
+	uint16_t m_depth;
+	bool m_ownTexture;
+	bgfx::TextureHandle m_textureHandle;
+	RectanglePackerCube m_packer;
+	GlyphInfo m_blackGlyph;
 		
-		uint16_t width;
-		uint16_t height;
-		uint16_t depth;
-		uint16_t _padding_;
-
-		int16_t m_black_x0;
-		int16_t m_black_y0;
-		int16_t m_black_x1;
-		int16_t m_black_y1;
-	};	
-	TextureAtlas* m_atlas;
-	bx::HandleAlloc m_atlasHandles;	
-
-	bgfx::TextureHandle createTexture(TextureType textureType, uint16_t width, uint16_t height);
-	void destroyTexture(bgfx::TextureHandle textureHandle);
-	bool addBitmap(TextureAtlas& atlas, GlyphInfo& glyphInfo, const uint8_t* data);	
+	bool addBitmap(GlyphInfo& glyphInfo, const uint8_t* data);	
 
 	//temporary buffer to raster glyph
-	uint8_t* m_buffer;
+	uint8_t* m_buffer;	
 };
 
 }

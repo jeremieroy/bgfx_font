@@ -4,21 +4,35 @@
 #include <assert.h>
 #include "FontManager.h"
 #include <math.h>
+
+
 #define BGFX_FONT_ASSERT(cond, message) assert((cond) && (message));
 
 namespace bgfx_font
 {
 const uint16_t MAX_OPENED_FILES = 64;
 const uint16_t MAX_OPENED_FONT = 64;
-const uint16_t MAX_TEXTURE_ATLAS = 4;
 const uint32_t MAX_FONT_BUFFER_SIZE = 512*512*4;
 
-FontManager::FontManager():m_filesHandles(MAX_OPENED_FILES), m_fontHandles(MAX_OPENED_FONT), m_atlasHandles(MAX_TEXTURE_ATLAS)
+FontManager::FontManager(uint32_t textureSideWidth, bgfx::TextureHandle _handle):m_filesHandles(MAX_OPENED_FILES), m_fontHandles(MAX_OPENED_FONT)
 {
 	m_cachedFiles = new CachedFile[MAX_OPENED_FILES];
 	m_cachedFonts = new CachedFont[MAX_OPENED_FONT];
-	m_atlas = new TextureAtlas[MAX_TEXTURE_ATLAS];
+	m_buffer = new uint8_t[MAX_FONT_BUFFER_SIZE];	
+	m_textureHandle = _handle;
+	initAtlas(textureSideWidth);
+	m_ownTexture = false;
+}
+
+FontManager::FontManager(uint32_t textureSideWidth):m_filesHandles(MAX_OPENED_FILES), m_fontHandles(MAX_OPENED_FONT)
+{
+	m_cachedFiles = new CachedFile[MAX_OPENED_FILES];
+	m_cachedFonts = new CachedFont[MAX_OPENED_FONT];
 	m_buffer = new uint8_t[MAX_FONT_BUFFER_SIZE];
+	m_packer.init(textureSideWidth);
+	createAtlas(textureSideWidth);
+	initAtlas(textureSideWidth);
+	m_ownTexture = true;
 }
 
 FontManager::~FontManager()
@@ -27,76 +41,60 @@ FontManager::~FontManager()
 	delete [] m_cachedFonts;
 
 	assert(m_filesHandles.getNumHandles() == 0 && "All the font files must be destroyed before destroying the manager");
-	delete [] m_cachedFiles;
-
-	assert(m_atlasHandles.getNumHandles() == 0 && "All the texture atlas must be destroyed before destroying the manager");
-	delete [] m_atlas;
-
+	delete [] m_cachedFiles;	
+	
 	delete [] m_buffer;
+	if(m_ownTexture)
+	{
+		//destroy the texture atlas
+		bgfx::destroyTexture(m_textureHandle);
+	}
 }
 
-TextureAtlasHandle FontManager::createTextureAtlas(TextureType type, uint16_t width, uint16_t height)
+void FontManager::createAtlas(uint32_t textureSideWidth)
 {
-	bgfx::TextureHandle textureHandle = createTexture(type, width, height);
-	assert(textureHandle.idx != bgfx::invalidHandle);
+	assert(textureSideWidth >= 64 );
+	//BGFX_TEXTURE_MIN_POINT|BGFX_TEXTURE_MAG_POINT|BGFX_TEXTURE_MIP_POINT;
+	//BGFX_TEXTURE_MIN_ANISOTROPIC|BGFX_TEXTURE_MAG_ANISOTROPIC|BGFX_TEXTURE_MIP_POINT
+	//BGFX_TEXTURE_U_CLAMP|BGFX_TEXTURE_V_CLAMP
+	uint32_t flags = 0;// BGFX_TEXTURE_MIN_ANISOTROPIC|BGFX_TEXTURE_MAG_ANISOTROPIC|BGFX_TEXTURE_MIP_POINT;
 
-	assert(width >= 16 );
-	assert(height >= 4 );
+	//Uncomment this to debug atlas
+	//const bgfx::Memory* mem = bgfx::alloc(width*height);
+	//memset(mem->data, 0, mem->size);
+	//const bgfx::Memory* mem = NULL;
+		
+	const uint32_t textureSide = 512;
+	m_textureHandle = 
+		bgfx::createTextureCube(6
+			, textureSide
+			, 1
+			, bgfx::TextureFormat::L8
+			, flags
+			);	
+}
 
-	uint16_t atlasIdx = m_atlasHandles.alloc();
-	assert(atlasIdx != bx::HandleAlloc::invalid);
-	m_atlas[atlasIdx].type = type;
-	m_atlas[atlasIdx].rectanglePacker.init(width, height);
-	m_atlas[atlasIdx].textureHandle = textureHandle;
-	m_atlas[atlasIdx].width = width;
-	m_atlas[atlasIdx].height = height;
-	m_atlas[atlasIdx].depth = (type == TEXTURE_TYPE_ALPHA)?1:4;
-	
+void FontManager::initAtlas(uint32_t textureSideWidth)
+{
+	assert(textureSideWidth >= 64 );
+	m_packer.init(textureSideWidth);
+
+	m_textureWidth = textureSideWidth;
+	m_depth = 1;
+
 	// Create filler rectangle
 	uint8_t buffer[4*4*4];
 	memset( buffer, 255, 4 * 4 * 4);
-	
-	//TODO use a glyph -_-
-	GlyphInfo glyph;
-	glyph.width=3;
-	glyph.height=3;
-	assert( addBitmap(m_atlas[atlasIdx], glyph, buffer) );
-		
-	m_atlas[atlasIdx].m_black_x0 = glyph.texture_x0;
-	m_atlas[atlasIdx].m_black_y0 = glyph.texture_y0;
-	m_atlas[atlasIdx].m_black_x1 = glyph.texture_x1;
-	m_atlas[atlasIdx].m_black_y1 = glyph.texture_y1;
 
-	return TextureAtlasHandle(atlasIdx);
-}
-
-bgfx::TextureHandle FontManager::getTextureHandle(TextureAtlasHandle handle)
-{
-	assert(handle.isValid());	
-	return m_atlas[handle.idx].textureHandle;
-}
-
-void FontManager::getTextureSize(TextureAtlasHandle handle, uint16_t& width, uint16_t& height)
-{
-	assert(handle.isValid());
-	width = m_atlas[handle.idx].width;
-	height = m_atlas[handle.idx].height;
-}
-
-void FontManager::getBlackGlyphUV(TextureAtlasHandle handle, int16_t& x0, int16_t& y0, int16_t& x1, int16_t& y1)
-{
-	assert(handle.isValid());
-	x0 = m_atlas[handle.idx].m_black_x0;
-	y0 = m_atlas[handle.idx].m_black_y0;
-	x1 = m_atlas[handle.idx].m_black_x1;
-	y1 = m_atlas[handle.idx].m_black_y1;
-}
-
-void FontManager::destroyTextureAtlas(TextureAtlasHandle handle)
-{
-	assert(handle.isValid());	
-	destroyTexture(m_atlas[handle.idx].textureHandle);	
-	m_atlasHandles.free(handle.idx);
+	m_blackGlyph.width=3;
+	m_blackGlyph.height=3;
+	assert( addBitmap(m_blackGlyph, buffer) );
+	//make sure the black glyph doesn't bleed
+	int16_t texUnit = 65535 / m_textureWidth;
+	m_blackGlyph.texture_x0 += texUnit;
+	m_blackGlyph.texture_y0 += texUnit;
+	m_blackGlyph.texture_x1 -= texUnit;
+	m_blackGlyph.texture_y1 -= texUnit;
 }
 
 TrueTypeHandle FontManager::loadTrueTypeFromFile(const char* fontPath, int32_t fontIndex)
@@ -167,31 +165,7 @@ void FontManager::unLoadTrueType(TrueTypeHandle handle)
 
 FontHandle FontManager::createFontByPixelSize(TrueTypeHandle handle, uint32_t typefaceIndex, uint32_t pixelSize, FontType fontType)
 {
-	assert(handle.isValid());
-	//search first compatible texture
-	//TODO improve this
-	uint16_t texCount = m_atlasHandles.getNumHandles();
-	const uint16_t* texHandles = m_atlasHandles.getHandles();
-	uint16_t hdIdx = 0;
-	for(; hdIdx < texCount; ++hdIdx)
-	{	
-		uint16_t texIDX = texHandles[hdIdx];
-		TextureType texType = m_atlas[ texIDX ].type;
-		if(texType == TEXTURE_TYPE_ALPHA && (fontType == FONT_TYPE_ALPHA || fontType == FONT_TYPE_DISTANCE))
-		{
-			break;
-		}
-		if(texType == TEXTURE_TYPE_RGBA && (fontType == FONT_TYPE_RGBA || fontType == FONT_TYPE_LCD))
-		{
-			break;
-		}
-	}
-
-	if(hdIdx == texCount)
-	{ 
-		return FontHandle(INVALID_HANDLE_ID);
-	}
-	
+	assert(handle.isValid());	
 
 	TrueTypeFont* ttf = new TrueTypeFont();
 	if(!ttf->init(  m_cachedFiles[handle.idx].buffer,  m_cachedFiles[handle.idx].bufferSize, typefaceIndex, pixelSize))
@@ -199,16 +173,13 @@ FontHandle FontManager::createFontByPixelSize(TrueTypeHandle handle, uint32_t ty
 		delete ttf;
 		return FontHandle(INVALID_HANDLE_ID);
 	}
-
-
-	uint16_t texIDX = texHandles[hdIdx];
+	
 	uint16_t fontIdx = m_fontHandles.alloc();
 	assert(fontIdx != bx::HandleAlloc::invalid);	
 	
 	m_cachedFonts[fontIdx].trueTypeFont = ttf;
 	m_cachedFonts[fontIdx].fontInfo = ttf->getFontInfo();
-	m_cachedFonts[fontIdx].fontInfo.fontType = fontType;
-	m_cachedFonts[fontIdx].fontInfo.textureAtlas = TextureAtlasHandle(texIDX);
+	m_cachedFonts[fontIdx].fontInfo.fontType = fontType;	
 	m_cachedFonts[fontIdx].fontInfo.pixelSize = pixelSize;
 	m_cachedFonts[fontIdx].cachedGlyphs.clear();
 	m_cachedFonts[fontIdx].masterFontHandle.idx = -1;
@@ -269,8 +240,7 @@ bool FontManager::preloadGlyph(FontHandle handle, const wchar_t* _string)
 {
 	assert(handle.isValid());	
 	CachedFont& font = m_cachedFonts[handle.idx];
-	FontInfo& fontInfo = font.fontInfo;
-	TextureAtlas& textureAtlas = m_atlas[fontInfo.textureAtlas.idx];	
+	FontInfo& fontInfo = font.fontInfo;	
 
 	//if truetype present
 	if(font.trueTypeFont != NULL)
@@ -296,7 +266,6 @@ bool FontManager::preloadGlyph(FontHandle handle, CodePoint_t codePoint)
 	assert(handle.isValid());	
 	CachedFont& font = m_cachedFonts[handle.idx];
 	FontInfo& fontInfo = font.fontInfo;
-	TextureAtlas& textureAtlas = m_atlas[fontInfo.textureAtlas.idx];
 
 	//check if glyph not already present
 	GlyphHash_t::iterator iter = font.cachedGlyphs.find(codePoint);
@@ -327,7 +296,7 @@ bool FontManager::preloadGlyph(FontHandle handle, CodePoint_t codePoint)
 		};
 
 		//copy bitmap to texture
-		if(!addBitmap(textureAtlas, glyphInfo, m_buffer) )
+		if(!addBitmap(glyphInfo, m_buffer) )
 		{
 			return false;
 		}
@@ -394,72 +363,39 @@ bool FontManager::getGlyphInfo(FontHandle fontHandle, CodePoint_t codePoint, Gly
 
 // ****************************************************************************
 
-bgfx::TextureHandle FontManager::createTexture(TextureType textureType, uint16_t width, uint16_t height)
-{
-	//Uncomment this to debug atlas
-	const bgfx::Memory* mem = bgfx::alloc(width*height);
-	memset(mem->data, 0, mem->size);
-	//const bgfx::Memory* mem = NULL;
-	//BGFX_TEXTURE_MIN_POINT|BGFX_TEXTURE_MAG_POINT|BGFX_TEXTURE_MIP_POINT;
-	//BGFX_TEXTURE_MIN_ANISOTROPIC|BGFX_TEXTURE_MAG_ANISOTROPIC|BGFX_TEXTURE_MIP_POINT
-	//BGFX_TEXTURE_U_CLAMP|BGFX_TEXTURE_V_CLAMP
-	uint32_t flags = BGFX_TEXTURE_MIN_ANISOTROPIC|BGFX_TEXTURE_MAG_ANISOTROPIC|BGFX_TEXTURE_MIP_POINT;
-	bgfx::TextureHandle handle;
-	switch(textureType)
-	{
-		case TEXTURE_TYPE_ALPHA:
-			handle = bgfx::createTexture2D(width, height, 1, bgfx::TextureFormat::L8, flags, mem);
-		break;
-		case TEXTURE_TYPE_RGBA:
-			handle = bgfx::createTexture2D(width, height, 1, bgfx::TextureFormat::BGRA8, flags, mem);
-		break;
-	};
-	return handle;
-}
 
-void FontManager::destroyTexture(bgfx::TextureHandle handle)
+bool FontManager::addBitmap(GlyphInfo& glyphInfo, const uint8_t* data)
 {
-	bgfx::destroyTexture(handle);
-}
-
-bool FontManager::addBitmap(TextureAtlas& atlas, GlyphInfo& glyphInfo, const uint8_t* data)
-{
-	uint16_t x,y;
+	uint16_t x,y,side;
 	// We want each bitmap to be separated by at least one black pixel
-	if(!atlas.rectanglePacker.addRectangle(glyphInfo.width + 1, glyphInfo.height + 1,  x, y))
+	if(!m_packer.addRectangle((uint16_t) (glyphInfo.width + 1), (uint16_t) (glyphInfo.height + 1),  x, y,side))
 	{
 		return false;
 	}
 
 	//this allocation could maybe be avoided, will see later
-	const bgfx::Memory* mem = bgfx::alloc(glyphInfo.width*glyphInfo.height*atlas.depth);
-	memcpy(mem->data, data, glyphInfo.width*glyphInfo.height*atlas.depth);	
-	bgfx::updateTexture2D(atlas.textureHandle, 0, x, y, glyphInfo.width, glyphInfo.height, mem);
+	const bgfx::Memory* mem = bgfx::alloc((uint32_t)(glyphInfo.width*glyphInfo.height*m_depth));
+	memcpy(mem->data, data, (size_t) (glyphInfo.width*glyphInfo.height*m_depth));	
+	bgfx::updateTextureCube(m_textureHandle, (uint8_t)side, 0, x, y, (uint16_t) glyphInfo.width, (uint16_t) glyphInfo.height, mem);	
 
 	glyphInfo.texture_x0 = x;
 	glyphInfo.texture_y0 = y;
-	glyphInfo.texture_x1 = x+glyphInfo.width;
-	glyphInfo.texture_y1 = y+glyphInfo.height;
-	
-	float texMultX = 32767.0f / (2.0f * (float) (atlas.width));
-	float texMultY = 32767.0f / (2.0f * (float) (atlas.height));
+	glyphInfo.texture_x1 = x+(int16_t) glyphInfo.width;
+	glyphInfo.texture_y1 = y+(int16_t) glyphInfo.height;
 
-	//float texMultX = 32767.0f / (float) (atlas.width);
-	//float texMultY = 32767.0f / (float) (atlas.height);
+	float texMult = 65535.0f / ((float)(m_textureWidth));
 
-	//(2.0f* x * + 1.0f)/fW;
+	const float centering = 0.0;//5f;
+	glyphInfo.texture_x0 =  ((int32_t)((glyphInfo.texture_x0 + centering) * texMult)-32768);
+	glyphInfo.texture_y0 =  ((int32_t)((glyphInfo.texture_y0 + centering) * texMult)-32768);
+	glyphInfo.texture_x1 =  ((int32_t)((glyphInfo.texture_x1 + centering) * texMult)-32768);
+	glyphInfo.texture_y1 =  ((int32_t)((glyphInfo.texture_y1 + centering) * texMult)-32768);
+	glyphInfo.side = side;
 
-	//this below SHOULD be 0.5, however due to ATI rounding, it seems to be better with 0.375
-	const float centering = 0.0f;//375f; 
-	glyphInfo.texture_x0 = (int16_t)((2.0f*glyphInfo.texture_x0 + centering) * texMultX);
-	glyphInfo.texture_y0 = (int16_t)((2.0f*glyphInfo.texture_y0 + centering) * texMultY);
-	glyphInfo.texture_x1 = (int16_t)((2.0f*glyphInfo.texture_x1 + centering) * texMultX);
-	glyphInfo.texture_y1 = (int16_t)((2.0f*glyphInfo.texture_y1 + centering) * texMultY);
-	
-	//assert(((glyphInfo.texture_x0 * atlas.width)/32767) == x);
-	//assert(((glyphInfo.texture_y0 * atlas.height)/32767) == y);
-	//assert(((glyphInfo.texture_x1 * atlas.width)/32767) == x+glyphInfo.width);
-	//assert(((glyphInfo.texture_y1 * atlas.height)/32767) == y+glyphInfo.height);
+	//assert(((glyphInfo.texture_x0 * m_textureWidth)/65535) == x);
+	//assert(((glyphInfo.texture_y0 * m_textureWidth)/65535) == y);
+	//assert(((glyphInfo.texture_x1 * m_textureWidth)/65535) == x+glyphInfo.width);
+	//assert(((glyphInfo.texture_y1 * m_textureWidth)/65535) == y+glyphInfo.height);
 
 	return true;
 }

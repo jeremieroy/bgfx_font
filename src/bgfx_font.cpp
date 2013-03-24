@@ -36,24 +36,6 @@ void shutdown()
 	g_context = NULL;	
 }
 
-TextureAtlasHandle createTextureAtlas(TextureType _type, uint16_t _width, uint16_t _height)
-{
-	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	return g_context->fontManager.createTextureAtlas(_type, _width, _height);
-}
-
-bgfx::TextureHandle getTextureHandle(TextureAtlasHandle _handle)
-{
-	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	return g_context->fontManager.getTextureHandle(_handle);
-}
-
-void destroyTextureAtlas(TextureAtlasHandle _handle)
-{
-	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	g_context->fontManager.destroyTextureAtlas(_handle);
-}
-
 TrueTypeHandle loadTrueTypeFont(const char * _fontPath)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
@@ -73,13 +55,13 @@ void unloadTrueTypeFont(TrueTypeHandle _handle)
 	g_context->fontManager.unLoadTrueType((bgfx_font::TrueTypeHandle)_handle);	
 }
 		
-FontHandle createFontByPixelSize(TrueTypeHandle _handle, uint32_t _typefaceIndex, uint32_t _pixelSize, FontType _fontType)
+FontHandle createFont(TrueTypeHandle _handle, uint32_t _typefaceIndex, uint32_t _pixelSize, FontType _fontType)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
 	return (FontHandle) g_context->fontManager.createFontByPixelSize(_handle, _typefaceIndex, _pixelSize, _fontType);
 }
 
-FontHandle createScaledFontToPixelSize(FontHandle _baseFontHandle, uint32_t _pixelSize)
+FontHandle createScaledFont(FontHandle _baseFontHandle, uint32_t _pixelSize)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
 	return (FontHandle) g_context->fontManager.createScaledFontToPixelSize(_baseFontHandle, _pixelSize);

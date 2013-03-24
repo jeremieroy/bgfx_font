@@ -12,12 +12,11 @@ namespace bgfx_font
 	// would be better if I didn't got into troubles with Initializer lists :  if (handle != { UINT16_MAX }) ...
 
 	BGFX_FONT_HANDLE(TrueTypeHandle);
-	BGFX_FONT_HANDLE(FontHandle);
-	BGFX_FONT_HANDLE(TextureAtlasHandle);
+	BGFX_FONT_HANDLE(FontHandle);	
 	BGFX_FONT_HANDLE(TextBufferHandle);	
 		
 	/// Type of texture supported for text
-	enum TextureType
+	enum TextureTypeY
 	{
 		TEXTURE_TYPE_ALPHA = 1, // L8
 		TEXTURE_TYPE_RGBA = 1<<1   // BGRA8
@@ -68,9 +67,7 @@ namespace bgfx_font
 		float underline_thickness;
 		/// The position of the underline relatively to the baseline
 		float underline_position;
-		
-		/// Id of the texture atlas in which the glyph's bitmap are stored
-		TextureAtlasHandle textureAtlas;
+				
 		//scale to apply to glyph data
 		float scale;
 	};
@@ -116,10 +113,10 @@ namespace bgfx_font
 		int32_t glyphIndex;
 	
 		/// Glyph's width in pixels.
-		uint16_t width;
+		float width;
 
 		/// Glyph's height in pixels.
-		uint16_t height;
+		float height;
 	
 		/// Glyph's left offset in pixels
 		float offset_x;
@@ -138,20 +135,18 @@ namespace bgfx_font
 		float advance_y;
 
 		/// texture coordinates are expressed in a normalized ratio of the texture size 
-		/// that map [0,width] and  [0,height]  to [0;32767]
-
+		/// that map [0,width] and  [0,height]  to [0;32767]		
 		/// left texture coordinates 
 		int16_t texture_x0;
-
 		/// top texture coordinates 
-		int16_t texture_y0;
-
+		int16_t texture_y0;		
 		/// right texture coordinates 
 		int16_t texture_x1;
-
 		/// bottom texture coordinates 
 		int16_t texture_y1;
 		
+		int16_t side;
+		int16_t padding;
 		/// TODO handle kerning
 	};
 	

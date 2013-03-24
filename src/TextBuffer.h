@@ -16,10 +16,9 @@ public:
 	
 	/// TextBuffer is bound to a fontManager for glyph retrieval
 	/// @remark the ownership of the manager is not taken
-	TextBuffer();
+	TextBuffer(FontManager* fontManager=NULL);
 	~TextBuffer();
-	
-	void setFontManager(FontManager* fontManager);
+	void setFontManager(FontManager* mgr) { m_fontManager = mgr; }
 
 	void setStyle(uint32_t flags = STYLE_NORMAL) { m_styleFlags = flags; }
 	void setTextColor(uint32_t rgba = 0x000000FF) { m_textColor = toABGR(rgba); }
@@ -54,10 +53,6 @@ public:
 	/// size in bytes of an index
 	uint32_t getIndexSize(){ return sizeof(uint16_t); }
 
-	bgfx::TextureHandle getTextureHandle() { return m_textureHandle; }
-	void getTextureSize(uint16_t& width, uint16_t& height) { width = m_textureWidth; height = m_textureHeight; }
-	void getBlackGlyph(int16_t& x0, int16_t& y0, int16_t& x1, int16_t& y1) { x0 = m_black_x0; y0 = m_black_y0; x1 = m_black_x1; y1 = m_black_y1; }
-
 private:
 	void appendGlyph(CodePoint_t codePoint, const FontInfo& font, const GlyphInfo& glyphInfo);
 	void verticalCenterLastLine(float txtDecalY, float top, float bottom);
@@ -90,31 +85,58 @@ private:
 	
 	///
 	FontManager* m_fontManager;
-	bgfx::TextureHandle m_textureHandle;
-	uint16_t __padding__;
-
-	uint16_t m_textureWidth;
-	uint16_t m_textureHeight;
-	int16_t m_black_x0;
-	int16_t m_black_y0;
-	int16_t m_black_x1;
-	int16_t m_black_y1;
-
-
-	void setVertex(size_t i, float _x, float _y, int16_t _u, int16_t _v, uint32_t _rgba, uint8_t style = STYLE_NORMAL)
+	
+	void setVertex(size_t i, float x, float y, int16_t u, int16_t v, int16_t side, uint32_t rgba, uint8_t style = STYLE_NORMAL)
 	{
-		m_vertexBuffer[i].x=_x;
-		m_vertexBuffer[i].y=_y;
-		m_vertexBuffer[i].u=_u;
-		m_vertexBuffer[i].v=_v;
-		m_vertexBuffer[i].rgba=_rgba;
+		m_vertexBuffer[i].x = x;
+		m_vertexBuffer[i].y = y;
+
+		const int16_t minVal = -32768;
+		const int16_t maxVal = 32767;
+
+		switch(side)
+		{
+		case 0:
+			m_vertexBuffer[i].u = maxVal;
+			m_vertexBuffer[i].v = -v;
+			m_vertexBuffer[i].w = -u;
+			break;
+		case 1:
+			m_vertexBuffer[i].u = minVal;
+			m_vertexBuffer[i].v = -v;
+			m_vertexBuffer[i].w = u;
+			break;
+		case 2:
+			m_vertexBuffer[i].u = u;
+			m_vertexBuffer[i].v = maxVal;
+			m_vertexBuffer[i].w = v;
+			break;
+		case 3:
+			m_vertexBuffer[i].u = u;
+			m_vertexBuffer[i].v = minVal;
+			m_vertexBuffer[i].w = -v;
+			break;
+		case 4:
+			m_vertexBuffer[i].u = u;
+			m_vertexBuffer[i].v = -v;
+			m_vertexBuffer[i].w = maxVal;
+			break;
+		case 5:
+			m_vertexBuffer[i].u = -u;
+			m_vertexBuffer[i].v = -v;
+			m_vertexBuffer[i].w = minVal;
+			break;
+		}
+		m_vertexBuffer[i].t = 0;
+		m_vertexBuffer[i].rgba = rgba;
 		m_styleBuffer[i] = style;
+		
 	}
 
 	struct TextVertex
 	{		
 		float x,y;
-		int16_t u,v;
+		int16_t u,v,w,t;
 		uint32_t rgba;
 	};
 

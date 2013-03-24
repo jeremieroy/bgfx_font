@@ -141,17 +141,18 @@ bool TrueTypeFont::bakeGlyphAlpha(const FontInfo& fontInfo,CodePoint_t codePoint
 	
 	FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyph;
 		
-	glyphInfo.offset_x = bitmap->left;
-	glyphInfo.offset_y = -bitmap->top;
-	glyphInfo.width = bitmap->bitmap.width;
-	glyphInfo.height = bitmap->bitmap.rows;
-	glyphInfo.advance_x = slot->advance.x /64.0f;
-	glyphInfo.advance_y = slot->advance.y /64.0f;
-	 
-	int x = glyphInfo.offset_x;
-	int y = glyphInfo.offset_y;
-	int w = glyphInfo.width;
-	int h = glyphInfo.height;
+	int x = bitmap->left;
+	int y = -bitmap->top;
+	int w = bitmap->bitmap.width;
+	int h = bitmap->bitmap.rows;
+
+	glyphInfo.offset_x = (float) x;
+	glyphInfo.offset_y = (float) y;	
+	glyphInfo.width = (float) w;	
+	glyphInfo.height = (float) h;	
+	glyphInfo.advance_x = (float)slot->advance.x /64.0f;
+	glyphInfo.advance_y = (float)slot->advance.y /64.0f;
+
 	int charsize = 1;
 	int depth=1;
 	int stride = bitmap->bitmap.pitch;
@@ -183,18 +184,17 @@ bool TrueTypeFont::bakeGlyphSubpixel(const FontInfo& fontInfo,CodePoint_t codePo
 	if(error){ return false; }
 	
 	FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyph;
-		
-	glyphInfo.offset_x = bitmap->left;
-	glyphInfo.offset_y = -bitmap->top;	
-	glyphInfo.width = bitmap->bitmap.width;
-	glyphInfo.height = bitmap->bitmap.rows;
-	glyphInfo.advance_x = (uint16_t)(slot->advance.x >>6);
-	glyphInfo.advance_y = (uint16_t)(slot->advance.y >>6);
-	 
-	int x = glyphInfo.offset_x;
-	int y = glyphInfo.offset_y;
-	int w = glyphInfo.width;
-	int h = glyphInfo.height;
+	int x = bitmap->left;
+	int y = -bitmap->top;
+	int w = bitmap->bitmap.width;
+	int h = bitmap->bitmap.rows;
+
+	glyphInfo.offset_x = (float) x;
+	glyphInfo.offset_y = (float) y;	
+	glyphInfo.width = (float) w;	
+	glyphInfo.height = (float) h;	
+	glyphInfo.advance_x = (float)slot->advance.x /64.0f;
+	glyphInfo.advance_y = (float)slot->advance.y /64.0f;
 	int charsize = 1;
 	int depth=3;
 	int stride = bitmap->bitmap.pitch;
@@ -306,18 +306,19 @@ bool TrueTypeFont::bakeGlyphDistance(const FontInfo& fontInfo, CodePoint_t codeP
 	if(error){ return false; }
 	
 	FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyph;
-		
-	glyphInfo.offset_x = bitmap->left;
-	glyphInfo.offset_y = -bitmap->top;	
-	glyphInfo.width = bitmap->bitmap.width;
-	glyphInfo.height = bitmap->bitmap.rows;
-	glyphInfo.advance_x = slot->advance.x /64.0f;
-	glyphInfo.advance_y = slot->advance.y /64.0f;
+	
+	int x = bitmap->left;
+	int y = -bitmap->top;
+	int w = bitmap->bitmap.width;
+	int h = bitmap->bitmap.rows;
+
+	glyphInfo.offset_x = (float) x;
+	glyphInfo.offset_y = (float) y;	
+	glyphInfo.width = (float) w;	
+	glyphInfo.height = (float) h;	
+	glyphInfo.advance_x = (float)slot->advance.x /64.0f;
+	glyphInfo.advance_y = (float)slot->advance.y /64.0f;
 	 
-	int x = glyphInfo.offset_x;
-	int y = glyphInfo.offset_y;
-	int w = glyphInfo.width;
-	int h = glyphInfo.height;
 	int charsize = 1;
 	int depth=1;
 	int stride = bitmap->bitmap.pitch;
@@ -366,156 +367,13 @@ bool TrueTypeFont::bakeGlyphDistance(const FontInfo& fontInfo, CodePoint_t codeP
 		make_distance_map(alphaImg, outBuffer, nw, nh);
 		free(alphaImg);	
 		
-		glyphInfo.offset_x -= dw;
-		glyphInfo.offset_y -= dh;
-		glyphInfo.width = nw ;
-		glyphInfo.height = nh;
+		glyphInfo.offset_x -= (float) dw;
+		glyphInfo.offset_y -= (float) dh;
+		glyphInfo.width = (float) nw ;
+		glyphInfo.height = (float) nh;
 	}
 	
 	return true;	
 }
-
-/*
-bool TrueTypeFont::bakeGlyphDistance2(const FontInfo& fontInfo, CodePoint_t codePoint, GlyphInfo& glyphInfo, uint8_t* outBufferu)
-{	
-	int8_t* outBuffer = (int8_t*) outBufferu;
-	assert(m_font != NULL && "TrueTypeFont not initialized" );
-	FTHolder* holder = (FTHolder*) m_font;
-	
-	glyphInfo.glyphIndex = FT_Get_Char_Index( holder->face, codePoint );
-	
-	FT_Int32 loadMode = FT_LOAD_TARGET_MONO;
-	FT_Render_Mode renderMode = FT_RENDER_MODE_MONO;
-		
-	//FT_Set_Pixel_Sizes( holder->face, 0, fontInfo.pixelSize * 8 );  
-	
-	FT_GlyphSlot slot = holder->face->glyph;
-	FT_Error error = FT_Load_Glyph(  holder->face, glyphInfo.glyphIndex, loadMode );
-	if(error) { return false; }
-	
-	FT_Glyph glyph;
-	error = FT_Get_Glyph( slot, &glyph );
-	if ( error ) { return false; }
-	
-	error = FT_Glyph_To_Bitmap( &glyph, renderMode, 0, 1 );
-	if(error){ return false; }
-	
-	FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyph;
-		 
-	int x = bitmap->left;
-	int y = -bitmap->top;
-	int w = bitmap->bitmap.width;
-	int h = bitmap->bitmap.rows;
-	int charsize = 1;
-	int depth=1;
-	int stride = bitmap->bitmap.pitch;
-
-	glyphInfo.offset_x = x;
-	glyphInfo.offset_y = y;	
-	glyphInfo.width = w;
-	glyphInfo.height = h;
-	glyphInfo.advance_x = slot->advance.x /64.0f;
-	glyphInfo.advance_y = slot->advance.y /64.0f;
-
-	
-	assert((w+8)*(h+8) < 512*512);
-
-	const uint8_t* src = bitmap->bitmap.buffer;
-	for( int y=0; y<h; ++y )
-	{		
-		for( int x=0; x<w; ++x )
-		{
-			uint32_t idx = y*w+x;
-			outBuffer[idx] = ((src[x / 8]) & (1 << (7 - (x % 8)))) ? 255 : 0;
-		}
-		src+=stride;
-	}
-	
-	FT_Done_Glyph(glyph);
-
-	SEDT sedt;
-	sedt.init(w,h, (uint8_t*)outBuffer);
-	sedt.compute(outBuffer);
-	/*
-	if(w*h >0)
-	{
-		//now add some space to expand the field and align on a multiple of 8 for proper downsampling
-		uint32_t dw = 8;
-		uint32_t dh = 8;
-		uint32_t nw = w + dw*2;
-		uint32_t nh = h + dh*2;
-		if(nw%8 != 0)
-		{
-			nw += 8 - nw%8;
-		}
-
-		if(nh%8 != 0)
-		{
-			nh += 8 - nh%8;
-		}		
-		assert(nw%8==0);
-		assert(nh%8==0);
-				
-		uint32_t buffSize = nw*nh*sizeof(uint8_t);
-	
-		uint8_t * alphaImg = (uint8_t *)  malloc( buffSize );
-		memset(alphaImg, 0, nw*nh*sizeof(uint8_t));
-
-		//copy the original buffer to the temp one
-		for(uint32_t  i= dh; i< nh-dh; ++i)
-		{
-			memcpy(alphaImg+i*nw+dw, outBuffer+(i-dh)*w, w);
-		}
-		
-		SEDT sedt;
-		sedt.init(nw,nh, outBuffer);
-		sedt.compute(outBuffer);
-		
-		
-		//now downsample
-		for(int y =0; y < nh; y+=8)
-		{
-			for(int x =0; x < nw; x+=8)
-			{
-				
-				int avg = 0;
-				for(int ay = y ; ay<y+8;++ay)
-				{
-					for(int ax = x ; ax < x+8;++ax)
-					{
-						avg+= outBuffer[ay*nw+ax];
-					}
-				}
-				//avg/=8;	
-				//assert(avg >=-127 && avg <= 128);
-				alphaImg[(y/8)* (nw/8)+ x/8] = (uint8_t) outBuffer[(y/8)* (nw/8)+ x/8];//avg;
-			}
-		}
-
-		memcpy(outBuffer, alphaImg, nw/8*nh/8);
-		
-		free(alphaImg);	
-		
-		
-		glyphInfo.offset_x -= dw;
-		glyphInfo.offset_y -= dh;
-		glyphInfo.width = nw ;
-		glyphInfo.height = nh;		
-	}
-
-	/*
-	glyphInfo.offset_x /=8;
-	glyphInfo.offset_y /=8;
-	glyphInfo.width /= 8;
-	glyphInfo.height /= 8;
-	glyphInfo.advance_x /= 8.0f;
-	glyphInfo.advance_y /= 8.0f;
-
-	FT_Set_Pixel_Sizes( holder->face, 0, fontInfo.pixelSize );  
-
-	
-	return true;	
-}
-	*/
 
 }

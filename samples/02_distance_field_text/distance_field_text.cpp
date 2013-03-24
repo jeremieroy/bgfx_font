@@ -13,74 +13,6 @@
 
 static const char* s_shaderPath = NULL;
 
-static void shaderFilePath(char* _out, const char* _name)
-{
-	strcpy(_out, s_shaderPath);
-	strcat(_out, _name);
-	strcat(_out, ".bin");
-}
-
-long int fsize(FILE* _file)
-{
-	long int pos = ftell(_file);
-	fseek(_file, 0L, SEEK_END);
-	long int size = ftell(_file);
-	fseek(_file, pos, SEEK_SET);
-	return size;
-}
-
-static const bgfx::Memory* load(const char* _filePath)
-{
-	FILE* file = fopen(_filePath, "rb");
-	if (NULL != file)
-	{
-		uint32_t size = (uint32_t)fsize(file);
-		const bgfx::Memory* mem = bgfx::alloc(size+1);
-		size_t ignore = fread(mem->data, 1, size, file);
-		BX_UNUSED(ignore);
-		fclose(file);
-		mem->data[mem->size-1] = '\0';
-		return mem;
-	}
-
-	return NULL;
-}
-
-static const bgfx::Memory* loadShader(const char* _name)
-{
-	char filePath[512];
-	shaderFilePath(filePath, _name);
-	return load(filePath);
-}
-
-static const bgfx::Memory* loadTexture(const char* _name)
-{
-	char filePath[512];
-	strcpy(filePath, "textures/");
-	strcat(filePath, _name);
-	return load(filePath);
-}
-
-struct Vertex
-{
-	int16_t x,y;
-	int16_t u,v;
-	float r,g,b,a;
-};
-
-const int16_t TW = 512;  //512.0f;
-const int16_t TM = 32767;//512*50;//65535; //1.0f;
-
-static Vertex s_quadVertices[4] =
-{
-	{  0,  0, 0,  0,  1.0f, 1.0 ,1.0, 1.0f},
-	{  0, TW, 0,  TM, 1.0f, 1.0 ,1.0, 1.0f},
-	{ TW, TW, TM, TM, 1.0f, 1.0 ,1.0, 1.0f},
-	{ TW,  0, TM, 0,  1.0f, 1.0 ,1.0, 1.0f}
-};
-
-static uint16_t s_quadVerticesIdx[6] = { 0,1,2,0,2,3 };
-
 int _main_(int _argc, char** _argv)
 {
     uint32_t width = 1280;
@@ -129,12 +61,10 @@ int _main_(int _argc, char** _argv)
 
 	//init the text rendering system
 	bgfx_font::init(s_shaderPath);
-    //allocate a texture atlas
-	bgfx_font::TextureAtlasHandle atlas = bgfx_font::createTextureAtlas(bgfx_font::TEXTURE_TYPE_ALPHA, 512, 512);
- 	
+
 	//load a truetype files
 	bgfx_font::TrueTypeHandle times_tt = bgfx_font::loadTrueTypeFont("c:/windows/fonts/times.ttf");	
-	bgfx_font::FontHandle distance_font = bgfx_font::createFontByPixelSize(times_tt, 0, 52, bgfx_font::FONT_TYPE_DISTANCE);
+	bgfx_font::FontHandle distance_font = bgfx_font::createFont(times_tt, 0, 48, bgfx_font::FONT_TYPE_DISTANCE);
 	//preload glyph and generate (generate bitmap's)
 	bgfx_font::preloadGlyph(distance_font, L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ. \n");
 
@@ -147,7 +77,7 @@ int _main_(int _argc, char** _argv)
 	{		
 		if(i<32) step = 2;
 		//instantiate a usable font
-		bgfx_font::FontHandle font = bgfx_font::createScaledFontToPixelSize(distance_font, i);
+		bgfx_font::FontHandle font = bgfx_font::createScaledFont(distance_font, i);
 		fonts[fontsCount++] = font;
 	}
 	//You can unload the truetype files at this stage, but in that case, the set of glyph's will be limited to the set of preloaded glyph
@@ -159,6 +89,8 @@ int _main_(int _argc, char** _argv)
 	for(size_t i = 0; i< fontsCount; ++i)
 	{
 		bgfx_font::appendText(staticText, fonts[i], L"The quick brown fox jumps over the lazy dog\n");
+		//bgfx_font::appendText(staticText, fonts[i], L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\n");
+		
 	}	
 		
     while (!processEvents(width, height, debug, reset) )
@@ -213,8 +145,7 @@ int _main_(int _argc, char** _argv)
 		bgfx_font::destroyFont(fonts[i]);
 	}
 	
-	bgfx_font::destroyTextBuffer(staticText);	
-	bgfx_font::destroyTextureAtlas(atlas);
+	bgfx_font::destroyTextBuffer(staticText);
 	bgfx_font::shutdown();
 	// Shutdown bgfx.
     bgfx::shutdown();

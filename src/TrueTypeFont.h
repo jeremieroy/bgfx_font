@@ -36,9 +36,6 @@ public:
     bool bakeGlyphSubpixel(const FontInfo& fontInfo,CodePoint_t codePoint, GlyphInfo& outGlyphInfo, uint8_t* outBuffer);
 
 	bool bakeGlyphDistance(const FontInfo& fontInfo,CodePoint_t codePoint, GlyphInfo& outGlyphInfo, uint8_t* outBuffer);
-
-	//bool bakeGlyphDistance2(const FontInfo& fontInfo,CodePoint_t codePoint, GlyphInfo& outGlyphInfo, uint8_t* outBuffer);
-
 private:
 	void* m_font;
 };

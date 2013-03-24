@@ -2,16 +2,20 @@ $input v_color0, v_texcoord0
 
 #include "common.sh"
 
-SAMPLER2D(u_texColor, 0);
+SAMPLERCUBE(u_texColor, 0);
 
 
 void main()
 {	
-    float distance = texture2D(u_texColor, v_texcoord0.xy).r;
+    float distance = textureCube(u_texColor, v_texcoord0.xyz).r;
     const float smoothness = 16.0;
-    const float gamma = 2.2;
-    float w = clamp( smoothness * (abs(dFdx(v_texcoord0.x)) + abs(dFdy(v_texcoord0.y))), 0.0, 0.5);
+    const float gamma = 2.2;    
+    float w = clamp( smoothness * 0.5f*(length(dFdx(v_texcoord0.xyz)) + length(dFdy(v_texcoord0.xyz))), 0.0, 0.5);
     float a = smoothstep(0.5-w, 0.5+w, distance);   
+
+    //float w = clamp( smoothness * fwidth(distance) , 0.0, 0.5);
+
+    
     a = pow(a, 1.0/gamma);
     gl_FragColor = vec4(v_color0.rgb, v_color0.a*a);
     

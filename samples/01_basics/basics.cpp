@@ -102,15 +102,13 @@ int _main_(int _argc, char** _argv)
 	//init the text rendering system
 	bgfx_font::init(s_shaderPath);
 
-	//allocate a texture atlas
-	bgfx_font::TextureAtlasHandle atlas = bgfx_font::createTextureAtlas(bgfx_font::TEXTURE_TYPE_ALPHA, 512, 512);
- 	
+	
 	//load some truetype files
 	bgfx_font::TrueTypeHandle times_tt = bgfx_font::loadTrueTypeFont("c:/windows/fonts/times.ttf");
 	bgfx_font::TrueTypeHandle consola_tt = bgfx_font::loadTrueTypeFont("c:/windows/fonts/consola.ttf");
 
 	//create some usable font with of a specific size
-	bgfx_font::FontHandle times_24 = bgfx_font::createFontByPixelSize(times_tt, 0, 24);
+	bgfx_font::FontHandle times_24 = bgfx_font::createFont(times_tt, 0, 24);
 		
 	//preload glyphs and blit them to atlas
 	bgfx_font::preloadGlyph(times_24, L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ. \n");
@@ -120,7 +118,7 @@ int _main_(int _argc, char** _argv)
 
 	//this font doesn't have any preloaded glyph's but the truetype file is loaded
 	//so glyph will be generated as needed
-	bgfx_font::FontHandle consola_16 = bgfx_font::createFontByPixelSize(consola_tt, 0, 16);
+	bgfx_font::FontHandle consola_16 = bgfx_font::createFont(consola_tt, 0, 16);
 	
 	//create a static text buffer compatible with alpha font
 	//a static text buffer content cannot be modified after its first submit.
@@ -226,8 +224,7 @@ int _main_(int _argc, char** _argv)
 	bgfx_font::destroyFont(times_24);
 
 	bgfx_font::destroyTextBuffer(staticText);
-	bgfx_font::destroyTextBuffer(transientText);
-	bgfx_font::destroyTextureAtlas(atlas);
+	bgfx_font::destroyTextBuffer(transientText);	
 	bgfx_font::shutdown();
 	// Shutdown bgfx.
     bgfx::shutdown();

@@ -17,10 +17,6 @@ RectanglePacker::RectanglePacker(uint32_t width, uint32_t height):m_width(width)
     m_skyline.push_back(Node(1,1, width-2));
 }
 
-RectanglePacker::~RectanglePacker()
-{
-}
-
 void RectanglePacker::init(uint32_t width, uint32_t height)
 {
 	assert(width > 2);

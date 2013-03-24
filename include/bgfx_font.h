@@ -16,18 +16,12 @@ namespace bgfx_font
 	/// @remark assume bgfx is (still) initialized
 	void shutdown();
 
-	/// allocate a texture atlas of the given type and size
-	/// As for now you can only have one texture of each type.
-	TextureAtlasHandle createTextureAtlas(TextureType _type, uint16_t _width, uint16_t _height);
-
-	/// retrieve a texture resource using the atlas handle (e.g. to render it)
+	/// retrieve the handle to texture resource (2D or cube) used by the font system (e.g. to render it)
 	/// The bgfx texture belong to the atlas, do not destroy it ! 
-	/// Instead you must destroy the TextureAtlas when it's not needed anymore.
-	bgfx::TextureHandle getTextureHandle(TextureAtlasHandle _handle);
-	
-	/// destroy a texture atlas an the associated bgfx texture
-	void destroyTextureAtlas(TextureAtlasHandle _handle);
-		
+	bgfx::TextureHandle getTextureHandle();
+
+	//TODO access to rectanglePacker as atlas
+
 	/// Load a truetype resource from a file, glyph can be generated if the font is loaded
 	TrueTypeHandle loadTrueTypeFont(const char * _fontPath);
 
@@ -37,10 +31,11 @@ namespace bgfx_font
 	/// free the resource allocated for the font (but keep loaded glyphs)
 	void unloadTrueTypeFont(TrueTypeHandle _handle);
 		
-	/// return a font descriptor to a truetype font whose height is a fixed pixel size	
-	FontHandle createFontByPixelSize(TrueTypeHandle _handle, uint32_t _typefaceIndex, uint32_t _pixelSize, FontType _fontType = FONT_TYPE_ALPHA);
-
-	FontHandle createScaledFontToPixelSize(FontHandle _baseFontHandle, uint32_t _pixelSize);
+	/// return a font descriptor to a truetype font whose height is a fixed size in pixels
+	FontHandle createFont(TrueTypeHandle _handle, uint32_t _typefaceIndex, uint32_t _heightPx, FontType _fontType = FONT_TYPE_ALPHA);
+	
+	/// return a font descriptor to a font which is a scaled verstion of another font. Best used with distance field font.
+	FontHandle createScaledFont(FontHandle _baseFontHandle, uint32_t _heightPx);
 	
 	/// Load a baked font and return a font descriptor corresponding to a baked font
 	FontHandle loadBakedFont(const char * _fontPath, const char * _fontName);
