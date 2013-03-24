@@ -84,14 +84,6 @@ namespace bgfx_font
 	/// append a wide char unicode string to the buffer using current pen position and color
 	void appendText(TextBufferHandle _handle, FontHandle _fontHandle, const wchar_t * _string);
 
-	/// append an ASCII/utf-8 string to the buffer using printf formatting and current pen position and color
-	/// @remark may have erroneous behavior when you rely on character counting in your format outside of the ASCII range
-	/// writing utf8 aware printf is cumbersome :(
-	void appendTextPrintf(TextBufferHandle _handle, FontHandle _fontHandle, const char * _format, ...);
-
-	/// appenda wide char unicode string to the buffer using printf formatting and current pen position and color
-	void appendTextPrintf(TextBufferHandle _handle, FontHandle _fontHandle, const wchar_t * _format, ...);
-
 	/// Clear the text buffer and reset its state (pen/color)
 	void clearTextBuffer(TextBufferHandle _handle);
 	
