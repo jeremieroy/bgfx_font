@@ -40,6 +40,7 @@ private:
 	FontManager* m_fontManager;
 	bgfx::VertexDecl m_vertexDecl;	
 	bgfx::UniformHandle m_u_texColor;
+	bgfx::UniformHandle m_u_inverse_gamma;	
 	//shaders program
 	bgfx::ProgramHandle m_basicProgram;
 	bgfx::ProgramHandle m_distanceProgram;

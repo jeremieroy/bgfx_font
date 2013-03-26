@@ -178,10 +178,10 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		int16_t s1 = blackGlyph.texture_x1;
 		int16_t t1 = blackGlyph.texture_y1;
 
-		setVertex(m_vertexCount+0, x0, y0, s0, t0, blackGlyph.side, m_backgroundColor,STYLE_BACKGROUND);
-		setVertex(m_vertexCount+1, x0, y1, s0, t1, blackGlyph.side, m_backgroundColor,STYLE_BACKGROUND);
-		setVertex(m_vertexCount+2, x1, y1, s1, t1, blackGlyph.side, m_backgroundColor,STYLE_BACKGROUND);
-		setVertex(m_vertexCount+3, x1, y0, s1, t0, blackGlyph.side, m_backgroundColor,STYLE_BACKGROUND);
+		setVertex(m_vertexCount+0, font.scale, x0, y0, s0, t0, blackGlyph.side, m_backgroundColor,STYLE_BACKGROUND);
+		setVertex(m_vertexCount+1, font.scale, x0, y1, s0, t1, blackGlyph.side, m_backgroundColor,STYLE_BACKGROUND);
+		setVertex(m_vertexCount+2, font.scale, x1, y1, s1, t1, blackGlyph.side, m_backgroundColor,STYLE_BACKGROUND);
+		setVertex(m_vertexCount+3, font.scale, x1, y0, s1, t0, blackGlyph.side, m_backgroundColor,STYLE_BACKGROUND);
 
 		m_indexBuffer[m_indexCount + 0] = m_vertexCount+0;
 		m_indexBuffer[m_indexCount + 1] = m_vertexCount+1;
@@ -192,7 +192,7 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		m_vertexCount += 4;
 		m_indexCount += 6;
 	}
-		
+	
 	if( m_styleFlags & STYLE_UNDERLINE && m_underlineColor & 0xFF000000)
 	{
 		float x0 = (int16_t)floor( m_penX - kerning );
@@ -205,10 +205,10 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		int16_t s1 = blackGlyph.texture_x1;
 		int16_t t1 = blackGlyph.texture_y1;
 
-		setVertex(m_vertexCount+0, x0, y0, s0, t0, blackGlyph.side, m_underlineColor,STYLE_UNDERLINE);
-		setVertex(m_vertexCount+1, x0, y1, s0, t1, blackGlyph.side, m_underlineColor,STYLE_UNDERLINE);
-		setVertex(m_vertexCount+2, x1, y1, s1, t1, blackGlyph.side, m_underlineColor,STYLE_UNDERLINE);
-		setVertex(m_vertexCount+3, x1, y0, s1, t0, blackGlyph.side, m_underlineColor,STYLE_UNDERLINE);
+		setVertex(m_vertexCount+0, font.scale, x0, y0, s0, t0, blackGlyph.side, m_underlineColor,STYLE_UNDERLINE);
+		setVertex(m_vertexCount+1, font.scale, x0, y1, s0, t1, blackGlyph.side, m_underlineColor,STYLE_UNDERLINE);
+		setVertex(m_vertexCount+2, font.scale, x1, y1, s1, t1, blackGlyph.side, m_underlineColor,STYLE_UNDERLINE);
+		setVertex(m_vertexCount+3, font.scale, x1, y0, s1, t0, blackGlyph.side, m_underlineColor,STYLE_UNDERLINE);
 
 		m_indexBuffer[m_indexCount + 0] = m_vertexCount+0;
 		m_indexBuffer[m_indexCount + 1] = m_vertexCount+1;
@@ -232,10 +232,10 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		int16_t s1 = blackGlyph.texture_x1;
 		int16_t t1 = blackGlyph.texture_y1;
 
-		setVertex(m_vertexCount+0, x0, y0, s0, t0, blackGlyph.side, m_overlineColor,STYLE_OVERLINE);
-		setVertex(m_vertexCount+1, x0, y1, s0, t1, blackGlyph.side, m_overlineColor,STYLE_OVERLINE);
-		setVertex(m_vertexCount+2, x1, y1, s1, t1, blackGlyph.side, m_overlineColor,STYLE_OVERLINE);
-		setVertex(m_vertexCount+3, x1, y0, s1, t0, blackGlyph.side, m_overlineColor,STYLE_OVERLINE);
+		setVertex(m_vertexCount+0, font.scale, x0, y0, s0, t0, blackGlyph.side, m_overlineColor,STYLE_OVERLINE);
+		setVertex(m_vertexCount+1, font.scale, x0, y1, s0, t1, blackGlyph.side, m_overlineColor,STYLE_OVERLINE);
+		setVertex(m_vertexCount+2, font.scale, x1, y1, s1, t1, blackGlyph.side, m_overlineColor,STYLE_OVERLINE);
+		setVertex(m_vertexCount+3, font.scale, x1, y0, s1, t0, blackGlyph.side, m_overlineColor,STYLE_OVERLINE);
 
 		m_indexBuffer[m_indexCount + 0] = m_vertexCount+0;
 		m_indexBuffer[m_indexCount + 1] = m_vertexCount+1;
@@ -246,6 +246,7 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		m_vertexCount += 4;
 		m_indexCount += 6;
 	}
+	
 		
 	if( m_styleFlags & STYLE_STRIKE_THROUGH && m_strikeThroughColor & 0xFF000000)
 	{
@@ -259,10 +260,10 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		int16_t s1 = blackGlyph.texture_x1;
 		int16_t t1 = blackGlyph.texture_y1;
 
-		setVertex(m_vertexCount+0, x0, y0, s0, t0, blackGlyph.side, m_strikeThroughColor,STYLE_STRIKE_THROUGH);
-		setVertex(m_vertexCount+1, x0, y1, s0, t1, blackGlyph.side, m_strikeThroughColor,STYLE_STRIKE_THROUGH);
-		setVertex(m_vertexCount+2, x1, y1, s1, t1, blackGlyph.side, m_strikeThroughColor,STYLE_STRIKE_THROUGH);
-		setVertex(m_vertexCount+3, x1, y0, s1, t0, blackGlyph.side, m_strikeThroughColor,STYLE_STRIKE_THROUGH);
+		setVertex(m_vertexCount+0, font.scale, x0, y0, s0, t0, blackGlyph.side, m_strikeThroughColor,STYLE_STRIKE_THROUGH);
+		setVertex(m_vertexCount+1, font.scale, x0, y1, s0, t1, blackGlyph.side, m_strikeThroughColor,STYLE_STRIKE_THROUGH);
+		setVertex(m_vertexCount+2, font.scale, x1, y1, s1, t1, blackGlyph.side, m_strikeThroughColor,STYLE_STRIKE_THROUGH);
+		setVertex(m_vertexCount+3, font.scale, x1, y0, s1, t0, blackGlyph.side, m_strikeThroughColor,STYLE_STRIKE_THROUGH);
 
 		m_indexBuffer[m_indexCount + 0] = m_vertexCount+0;
 		m_indexBuffer[m_indexCount + 1] = m_vertexCount+1;
@@ -278,7 +279,7 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 	//handle glyph
 	float x0_precise = m_penX + (glyphInfo.offset_x);
 	float x0 = ( x0_precise);
-	float y0 =  ( m_penY + (glyphInfo.offset_y));
+	float y0 = ( m_penY + (glyphInfo.offset_y));
 	float x1 = ( x0 + glyphInfo.width );
 	float y1 = ( y0 + glyphInfo.height );
 
@@ -289,10 +290,10 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 	int16_t s1 = glyphInfo.texture_x1;
 	int16_t t1 = glyphInfo.texture_y1;
 	
-	setVertex(m_vertexCount+0, x0, y0, s0, t0, glyphInfo.side, m_textColor);
-	setVertex(m_vertexCount+1, x0, y1, s0, t1, glyphInfo.side, m_textColor);
-	setVertex(m_vertexCount+2, x1, y1, s1, t1, glyphInfo.side, m_textColor);
-	setVertex(m_vertexCount+3, x1, y0, s1, t0, glyphInfo.side, m_textColor);
+	setVertex(m_vertexCount+0, font.scale, x0, y0, s0, t0, glyphInfo.side, m_textColor);
+	setVertex(m_vertexCount+1, font.scale, x0, y1, s0, t1, glyphInfo.side, m_textColor);
+	setVertex(m_vertexCount+2, font.scale, x1, y1, s1, t1, glyphInfo.side, m_textColor);
+	setVertex(m_vertexCount+3, font.scale, x1, y0, s1, t0, glyphInfo.side, m_textColor);
 
 	m_indexBuffer[m_indexCount + 0] = m_vertexCount+0;
 	m_indexBuffer[m_indexCount + 1] = m_vertexCount+1;

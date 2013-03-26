@@ -86,7 +86,7 @@ private:
 	///
 	FontManager* m_fontManager;
 	
-	void setVertex(size_t i, float x, float y, int16_t u, int16_t v, int16_t side, uint32_t rgba, uint8_t style = STYLE_NORMAL)
+	void setVertex(size_t i, float scale, float x, float y, int16_t u, int16_t v, int16_t side, uint32_t rgba, uint8_t style = STYLE_NORMAL)
 	{
 		m_vertexBuffer[i].x = x;
 		m_vertexBuffer[i].y = y;
@@ -127,10 +127,11 @@ private:
 			m_vertexBuffer[i].w = minVal;
 			break;
 		}
-		m_vertexBuffer[i].t = 0;
+		//dividing by 16 is the normal amount of AA
+		//However I like it a bit sharper so I divide by 24 instead (could make this a uniform...)
+		m_vertexBuffer[i].t = (int16_t) ((32767.0f/24.0f) / scale);
 		m_vertexBuffer[i].rgba = rgba;
 		m_styleBuffer[i] = style;
-		
 	}
 
 	struct TextVertex
@@ -147,8 +148,6 @@ private:
 	size_t m_vertexCount;
 	size_t m_indexCount;
 	size_t m_lineStartIndex;
-	
-
 };
 
 }

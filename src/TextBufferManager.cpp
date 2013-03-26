@@ -52,6 +52,8 @@ TextBufferManager::~TextBufferManager()
 	delete[] m_textBuffers;
 
 	bgfx::destroyUniform(m_u_texColor);
+	//bgfx::destroyUniform(m_u_alphaMin);
+	bgfx::destroyUniform(m_u_inverse_gamma);
 	bgfx::destroyProgram(m_basicProgram);	
 	
 }
@@ -67,6 +69,8 @@ void TextBufferManager::init(FontManager* fontManager, const char* shaderPath)
 	m_vertexDecl.end();
 
 	m_u_texColor = bgfx::createUniform("u_texColor", bgfx::UniformType::Uniform1iv);
+	m_u_inverse_gamma = bgfx::createUniform("u_inverse_gamma", bgfx::UniformType::Uniform1f);
+	//m_u_alphaMax = bgfx::createUniform("u_alphaMax", bgfx::UniformType::Uniform1f);
 
 	const bgfx::Memory* mem;
 	mem = loadShader(shaderPath, "vs_font_basic");
@@ -154,10 +158,13 @@ void TextBufferManager::submitTextBuffer(TextBufferHandle _handle, uint8_t _id, 
 	}else
 	{
 		bgfx::setProgram(m_basicProgram);
-	}	
-	
+	}
 	
 	bgfx::setTexture(0, m_u_texColor, m_fontManager->getTextureHandle() );
+
+	float inverse_gamme = 1.0f/2.2f;	
+	bgfx::setUniform(m_u_inverse_gamma, &inverse_gamme);
+	//bgfx::setUniform(m_u_alphaMax, &alphaMax);
 
 	bgfx::setState( BGFX_STATE_RGB_WRITE
 			|BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA)
