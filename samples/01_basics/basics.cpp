@@ -13,46 +13,6 @@
 
 static const char* s_shaderPath = NULL;
 
-static void shaderFilePath(char* _out, const char* _name)
-{
-	strcpy(_out, s_shaderPath);
-	strcat(_out, _name);
-	strcat(_out, ".bin");
-}
-
-long int fsize(FILE* _file)
-{
-	long int pos = ftell(_file);
-	fseek(_file, 0L, SEEK_END);
-	long int size = ftell(_file);
-	fseek(_file, pos, SEEK_SET);
-	return size;
-}
-
-static const bgfx::Memory* load(const char* _filePath)
-{
-	FILE* file = fopen(_filePath, "rb");
-	if (NULL != file)
-	{
-		uint32_t size = (uint32_t)fsize(file);
-		const bgfx::Memory* mem = bgfx::alloc(size+1);
-		size_t ignore = fread(mem->data, 1, size, file);
-		BX_UNUSED(ignore);
-		fclose(file);
-		mem->data[mem->size-1] = '\0';
-		return mem;
-	}
-
-	return NULL;
-}
-
-static const bgfx::Memory* loadShader(const char* _name)
-{
-	char filePath[512];
-	shaderFilePath(filePath, _name);
-	return load(filePath);
-}
-
 int _main_(int _argc, char** _argv)
 {
     uint32_t width = 1280;
@@ -136,7 +96,6 @@ int _main_(int _argc, char** _argv)
 	bgfx_font::setUnderlineColor(staticText, 0xFF2222FF);
 	bgfx_font::setOverlineColor(staticText, 0x2222FFFF);
 	bgfx_font::setStrikeThroughColor(staticText, 0x22FF22FF);
-
 	
 
 	//text + bkg
@@ -209,7 +168,7 @@ int _main_(int _argc, char** _argv)
 		bgfx_font::appendText(transientText, consola_16, L"Description: truetype, font, text and style\n");
 		bgfx_font::appendText(transientText, consola_16, fpsText);
 		
-		bgfx_font::submitTextBuffer(transientText, 0);		
+		bgfx_font::submitTextBuffer(transientText, 0);
 		
         // Advance to next frame. Rendering thread will be kicked to 
 		// process submitted rendering primitives.
