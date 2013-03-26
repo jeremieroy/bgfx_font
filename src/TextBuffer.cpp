@@ -309,8 +309,7 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 }
 
 void TextBuffer::verticalCenterLastLine(float dy, float top, float bottom)
-{	
-	return;
+{		
 	for( size_t i=m_lineStartIndex; i < m_vertexCount; i+=4 )
     {	
 		if( m_styleBuffer[i] == STYLE_BACKGROUND)
