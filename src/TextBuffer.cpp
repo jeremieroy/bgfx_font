@@ -123,9 +123,7 @@ void TextBuffer::clearTextBuffer()
 }
 
 void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const GlyphInfo& glyphInfo)
-{
-	//float gamma = glyphInfo.gamma;
-
+{	
 	//handle newlines
 	if(codePoint == L'\n' )
     {
@@ -168,10 +166,10 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 	
 	if( m_styleFlags & STYLE_BACKGROUND && m_backgroundColor & 0xFF000000)
 	{
-		float x0 = (int16_t)floor( m_penX - kerning );
-		float y0 = (int16_t)( m_penY  - m_lineAscender);
-		float x1 = (int16_t)ceil( (float)x0 + (glyphInfo.advance_x));
-		float y1 = (int16_t)( m_penY - m_lineDescender + m_lineGap );
+		float x0 = ( m_penX - kerning );
+		float y0 = ( m_penY  - m_lineAscender);
+		float x1 = ( (float)x0 + (glyphInfo.advance_x));
+		float y1 = ( m_penY - m_lineDescender + m_lineGap );
 
 		int16_t s0 = blackGlyph.texture_x0;
 		int16_t t0 = blackGlyph.texture_y0;
@@ -195,9 +193,9 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 	
 	if( m_styleFlags & STYLE_UNDERLINE && m_underlineColor & 0xFF000000)
 	{
-		float x0 = (int16_t)floor( m_penX - kerning );
-		float y0 = (int16_t)ceil(m_penY - m_lineDescender/2 );
-		float x1 = (int16_t)ceil( (float)x0 + (glyphInfo.advance_x));
+		float x0 = ( m_penX - kerning );
+		float y0 = (m_penY - m_lineDescender/2 );
+		float x1 = ( (float)x0 + (glyphInfo.advance_x));
 		float y1 = y0+font.underline_thickness;
 		
 		int16_t s0 = blackGlyph.texture_x0;
@@ -222,9 +220,9 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 	
 	if( m_styleFlags & STYLE_OVERLINE && m_overlineColor & 0xFF000000)
 	{
-		float x0 = (int16_t)floor( m_penX - kerning );
-		float y0 = (int16_t)ceil(m_penY - font.ascender );
-		float x1 = (int16_t)ceil( (float)x0 + (glyphInfo.advance_x));
+		float x0 = ( m_penX - kerning );
+		float y0 = (m_penY - font.ascender );
+		float x1 = ( (float)x0 + (glyphInfo.advance_x));
 		float y1 = y0+font.underline_thickness;
 
 		int16_t s0 = blackGlyph.texture_x0;
@@ -250,9 +248,9 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		
 	if( m_styleFlags & STYLE_STRIKE_THROUGH && m_strikeThroughColor & 0xFF000000)
 	{
- 		float x0 = (int16_t)floor( m_penX - kerning );
-		float y0 = (int16_t)ceil(m_penY - font.ascender/3 );
-		float x1 = (int16_t)ceil( (float)x0 + (glyphInfo.advance_x) );
+ 		float x0 = ( m_penX - kerning );
+		float y0 = (m_penY - font.ascender/3 );
+		float x1 = ( (float)x0 + (glyphInfo.advance_x) );
 		float y1 = y0+font.underline_thickness;
 
 		int16_t s0 = blackGlyph.texture_x0;
