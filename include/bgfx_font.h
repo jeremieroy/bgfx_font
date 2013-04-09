@@ -16,8 +16,8 @@ namespace bgfx_font
 	/// @remark assume bgfx is (still) initialized
 	void shutdown();
 
-	/// retrieve the handle to texture resource (2D or cube) used by the font system (e.g. to render it)
-	/// The bgfx texture belong to the atlas, do not destroy it ! 
+	/// retrieve the handle to texture cube resource used by the font system (e.g. to render it)
+	/// The bgfx texture belong to the system, do not destroy it ! 
 	bgfx::TextureHandle getTextureHandle();
 
 	//TODO access to rectanglePacker as atlas
@@ -30,7 +30,7 @@ namespace bgfx_font
 	
 	/// free the resource allocated for the font (but keep loaded glyphs)
 	void unloadTrueTypeFont(TrueTypeHandle _handle);
-		
+
 	/// return a font descriptor to a truetype font whose height is a fixed size in pixels
 	FontHandle createFont(TrueTypeHandle _handle, uint32_t _typefaceIndex, uint32_t _heightPx, FontType _fontType = FONT_TYPE_ALPHA);
 	
