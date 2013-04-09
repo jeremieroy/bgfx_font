@@ -28,7 +28,7 @@ public:
 	void setUnderlineColor(uint32_t rgba = 0x000000FF) { m_underlineColor = toABGR(rgba); }
 	void setStrikeThroughColor(uint32_t rgba = 0x000000FF) { m_strikeThroughColor = toABGR(rgba); }
 	
-	void setPenPosition(float x, float y) { m_penX = x; m_penY = y; }
+	void setPenPosition(float x, float y) { m_penX = x; };// m_penY = y; }
 
 	/// append an ASCII/utf-8 string to the buffer using current pen position and color
 	void appendText(FontHandle fontHandle, const char * _string);
@@ -127,9 +127,7 @@ private:
 			m_vertexBuffer[i].w = minVal;
 			break;
 		}
-		//dividing by 16 is the normal amount of AA
-		//However I like it a bit sharper so I divide by 24 instead (could make this a uniform...)
-		m_vertexBuffer[i].t = (int16_t) ((32767.0f/24.0f) / scale);
+		m_vertexBuffer[i].t = (int16_t) ((32767.0f/16.0f) / scale);
 		m_vertexBuffer[i].rgba = rgba;
 		m_styleBuffer[i] = style;
 	}
