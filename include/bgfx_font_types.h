@@ -15,21 +15,15 @@ namespace bgfx_font
 	BGFX_FONT_HANDLE(FontHandle);	
 	BGFX_FONT_HANDLE(TextBufferHandle);	
 		
-	/// Type of texture supported for text
-	enum TextureTypeY
-	{
-		TEXTURE_TYPE_ALPHA = 1, // L8
-		TEXTURE_TYPE_RGBA = 1<<1   // BGRA8
-	};
-
 	/// Type of rendering used for the font (determine texture format and shader type)
 	/// @remark Encode texture compatibility on the low bits
 	enum FontType
 	{
-		FONT_TYPE_ALPHA    = 0x00000100 | TEXTURE_TYPE_ALPHA, // L8
-		FONT_TYPE_LCD      = 0x00000200 | TEXTURE_TYPE_RGBA,  // BGRA8
-		FONT_TYPE_RGBA     = 0x00000300 | TEXTURE_TYPE_RGBA,  // BGRA8
-		FONT_TYPE_DISTANCE = 0x00000400 | TEXTURE_TYPE_ALPHA  // L8
+		FONT_TYPE_ALPHA    = 0x00000100 , // L8
+		FONT_TYPE_LCD      = 0x00000200,  // BGRA8
+		FONT_TYPE_RGBA     = 0x00000300,  // BGRA8
+		FONT_TYPE_DISTANCE = 0x00000400,   // L8
+		FONT_TYPE_DISTANCE_SUBPIXEL = 0x00000500   // L8
 	};
 	
 	/// type of vertex and index buffer to use with a TextBuffer

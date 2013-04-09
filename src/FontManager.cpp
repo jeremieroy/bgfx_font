@@ -291,6 +291,9 @@ bool FontManager::preloadGlyph(FontHandle handle, CodePoint_t codePoint)
 		case FONT_TYPE_DISTANCE:
 			font.trueTypeFont->bakeGlyphDistance(fontInfo,codePoint, glyphInfo, m_buffer);
 			break;
+		case FONT_TYPE_DISTANCE_SUBPIXEL:
+			font.trueTypeFont->bakeGlyphDistance(fontInfo,codePoint, glyphInfo, m_buffer);
+			break;
 		default:
 			assert(false && "TextureType not supported yet");
 		};

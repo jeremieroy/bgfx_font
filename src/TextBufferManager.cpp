@@ -54,7 +54,10 @@ TextBufferManager::~TextBufferManager()
 	bgfx::destroyUniform(m_u_texColor);
 	//bgfx::destroyUniform(m_u_alphaMin);
 	bgfx::destroyUniform(m_u_inverse_gamma);
+
 	bgfx::destroyProgram(m_basicProgram);	
+	bgfx::destroyProgram(m_distanceProgram);	
+	bgfx::destroyProgram(m_distanceSubpixelProgram);		
 	
 }
 
@@ -79,17 +82,23 @@ void TextBufferManager::init(FontManager* fontManager, const char* shaderPath)
 	bgfx::FragmentShaderHandle fsh = bgfx::createFragmentShader(mem);
 	m_basicProgram = bgfx::createProgram(vsh, fsh);
 	bgfx::destroyVertexShader(vsh);
-	bgfx::destroyFragmentShader(fsh);
+	bgfx::destroyFragmentShader(fsh);	
 
-	mem = loadShader(shaderPath, "vs_font_distance_field");
-	vsh = bgfx::createVertexShader(mem);
+	mem = loadShader(shaderPath, "vs_font_distance_field");	
+	vsh = bgfx::createVertexShader(mem);	
 	mem = loadShader(shaderPath, "fs_font_distance_field");
 	fsh = bgfx::createFragmentShader(mem);
 	m_distanceProgram = bgfx::createProgram(vsh, fsh);
 	bgfx::destroyVertexShader(vsh);
 	bgfx::destroyFragmentShader(fsh);
-
 	
+	mem = loadShader(shaderPath, "vs_font_distance_field_subpixel");
+	vsh = bgfx::createVertexShader(mem);		
+	mem = loadShader(shaderPath, "fs_font_distance_field_subpixel");
+	fsh = bgfx::createFragmentShader(mem);
+	m_distanceSubpixelProgram = bgfx::createProgram(vsh, fsh);
+	bgfx::destroyVertexShader(vsh);
+	bgfx::destroyFragmentShader(fsh);	
 }
 
 TextBufferHandle TextBufferManager::createTextBuffer(FontType _type, BufferType bufferType)
@@ -150,29 +159,43 @@ void TextBufferManager::submitTextBuffer(TextBufferHandle _handle, uint8_t _id, 
 	
 	size_t indexSize = bc.textBuffer.getIndexCount() * bc.textBuffer.getIndexSize();
 	size_t vertexSize = bc.textBuffer.getVertexCount() * bc.textBuffer.getVertexSize();
-	const bgfx::Memory* mem;	
+	const bgfx::Memory* mem;
 
-	if(bc.fontType==FONT_TYPE_DISTANCE)
-	{
-		bgfx::setProgram(m_distanceProgram);
-	}else
-	{
-		bgfx::setProgram(m_basicProgram);
-	}
-	
 	bgfx::setTexture(0, m_u_texColor, m_fontManager->getTextureHandle() );
-
-	float inverse_gamme = 1.0f/2.2f;	
-	bgfx::setUniform(m_u_inverse_gamma, &inverse_gamme);
-	//bgfx::setUniform(m_u_alphaMax, &alphaMax);
-
+	float inverse_gamme = 1.0f/2.2f;
+	bgfx::setUniform(m_u_inverse_gamma, &inverse_gamme);	
+	
+	switch (bc.fontType)
+	{
+	case FONT_TYPE_ALPHA:
+		bgfx::setProgram(m_basicProgram);
+		bgfx::setState( BGFX_STATE_RGB_WRITE | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA) );
+		break;
+	case FONT_TYPE_DISTANCE:
+		bgfx::setProgram(m_distanceProgram);
+		bgfx::setState( BGFX_STATE_RGB_WRITE | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA) );
+		break;
+	case FONT_TYPE_DISTANCE_SUBPIXEL:
+		bgfx::setProgram(m_distanceSubpixelProgram);
+		bgfx::setState( BGFX_STATE_RGB_WRITE |BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_FACTOR, BGFX_STATE_BLEND_INV_SRC_COLOR) , 0x000000FF);
+		break;	
+	}
+		
+	/*
 	bgfx::setState( BGFX_STATE_RGB_WRITE
-			|BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA)
+			//|BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA)
+			//|BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_ONE, BGFX_STATE_BLEND_INV_SRC_COLOR)
+			|BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_FACTOR, BGFX_STATE_BLEND_INV_SRC_COLOR)
+			//|BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_INV_FACTOR, BGFX_STATE_BLEND_INV_SRC_COLOR)
+			//|BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_ONE, BGFX_STATE_BLEND_ZERO)
 			//|BGFX_STATE_ALPHA_TEST
 			//|BGFX_STATE_DEPTH_WRITE
 			//|BGFX_STATE_DEPTH_TEST_LESS
+			//,0x000000FF
+			,0xFFFFFFFF
 			);
-	
+	*/
+
 	switch(bc.bufferType)
 	{
 		case STATIC:
