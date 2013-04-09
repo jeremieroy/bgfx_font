@@ -291,7 +291,7 @@ bool TrueTypeFont::bakeGlyphDistance(const FontInfo& fontInfo, CodePoint_t codeP
 	
 	glyphInfo.glyphIndex = FT_Get_Char_Index( holder->face, codePoint );
 	
-	FT_Int32 loadMode = FT_LOAD_DEFAULT; //FT_LOAD_TARGET_MONO;
+	FT_Int32 loadMode = FT_LOAD_DEFAULT|FT_LOAD_NO_HINTING; //FT_LOAD_TARGET_MONO;
 	FT_Render_Mode renderMode = FT_RENDER_MODE_NORMAL;//FT_RENDER_MODE_MONO
 
 	FT_GlyphSlot slot = holder->face->glyph;
