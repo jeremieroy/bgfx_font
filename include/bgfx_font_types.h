@@ -9,7 +9,7 @@ namespace bgfx_font
 	const uint16_t INVALID_HANDLE_ID = UINT16_MAX;
 	#define BGFX_FONT_HANDLE(_name) struct _name { uint16_t idx; explicit _name(uint16_t _idx = INVALID_HANDLE_ID):idx(_idx){} bool isValid(){return idx != INVALID_HANDLE_ID;} }
 	// @ note to myself
-	// would be better if I didn't got into troubles with Initializer lists :  if (handle != { UINT16_MAX }) ...
+	// would be better if I didn't get issues with Initializer lists :  if (handle != { UINT16_MAX }) ...
 
 	BGFX_FONT_HANDLE(TrueTypeHandle);
 	BGFX_FONT_HANDLE(FontHandle);	

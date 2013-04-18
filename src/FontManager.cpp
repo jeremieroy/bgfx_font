@@ -14,79 +14,26 @@ const uint16_t MAX_OPENED_FILES = 64;
 const uint16_t MAX_OPENED_FONT = 64;
 const uint32_t MAX_FONT_BUFFER_SIZE = 512*512*4;
 
-FontManager::FontManager(uint32_t textureSideWidth, bgfx::TextureHandle _handle):m_filesHandles(MAX_OPENED_FILES), m_fontHandles(MAX_OPENED_FONT)
+FontManager::FontManager(Atlas* atlas):m_filesHandles(MAX_OPENED_FILES), m_fontHandles(MAX_OPENED_FONT)
 {
-	m_cachedFiles = new CachedFile[MAX_OPENED_FILES];
-	m_cachedFonts = new CachedFont[MAX_OPENED_FONT];
-	m_buffer = new uint8_t[MAX_FONT_BUFFER_SIZE];	
-	//m_textureHandle = _handle;
-	initAtlas(textureSideWidth);
-	m_ownTexture = false;
+	m_atlas = atlas;
+	m_ownAtlas = false;	
+	init(atlas->getTextureSize());	
 }
 
 FontManager::FontManager(uint32_t textureSideWidth):m_filesHandles(MAX_OPENED_FILES), m_fontHandles(MAX_OPENED_FONT)
 {
+	m_atlas = new Atlas(textureSideWidth);
+	m_ownAtlas = true;	
+	init(textureSideWidth);
+}
+
+void FontManager::init(uint32_t textureSideWidth)
+{
 	m_cachedFiles = new CachedFile[MAX_OPENED_FILES];
 	m_cachedFonts = new CachedFont[MAX_OPENED_FONT];
 	m_buffer = new uint8_t[MAX_FONT_BUFFER_SIZE];
-	m_atlas = new Atlas(textureSideWidth);
-	//m_packer.init(textureSideWidth);
-	createAtlas(textureSideWidth);
-	initAtlas(textureSideWidth);
-	m_ownTexture = true;
-}
-
-FontManager::~FontManager()
-{
-	assert(m_fontHandles.getNumHandles() == 0 && "All the fonts must be destroyed before destroying the manager");
-	delete [] m_cachedFonts;
-
-	assert(m_filesHandles.getNumHandles() == 0 && "All the font files must be destroyed before destroying the manager");
-	delete [] m_cachedFiles;	
 	
-	delete [] m_buffer;
-	delete m_atlas;
-	if(m_ownTexture)
-	{
-		//destroy the texture atlas
-		//bgfx::destroyTexture(m_textureHandle);
-	}
-}
-
-void FontManager::createAtlas(uint32_t textureSideWidth)
-{
-	m_atlas = new Atlas(textureSideWidth);
-
-	//assert(textureSideWidth >= 64 );
-	//BGFX_TEXTURE_MIN_POINT|BGFX_TEXTURE_MAG_POINT|BGFX_TEXTURE_MIP_POINT;
-	//BGFX_TEXTURE_MIN_ANISOTROPIC|BGFX_TEXTURE_MAG_ANISOTROPIC|BGFX_TEXTURE_MIP_POINT
-	//BGFX_TEXTURE_U_CLAMP|BGFX_TEXTURE_V_CLAMP
-	//uint32_t flags = 0;// BGFX_TEXTURE_MIN_ANISOTROPIC|BGFX_TEXTURE_MAG_ANISOTROPIC|BGFX_TEXTURE_MIP_POINT;
-
-	//Uncomment this to debug atlas
-	//const bgfx::Memory* mem = bgfx::alloc(width*height);
-	//memset(mem->data, 0, mem->size);
-	//const bgfx::Memory* mem = NULL;
-		
-	//const uint32_t textureSide = 512;
-	/*m_textureHandle = 
-		bgfx::createTextureCube(6
-			, textureSide
-			, 1
-			, bgfx::TextureFormat::L8
-			, flags
-			);	
-			*/
-}
-
-void FontManager::initAtlas(uint32_t textureSideWidth)
-{
-	assert(textureSideWidth >= 64 );
-	//m_packer.init(textureSideWidth);
-
-	m_textureWidth = textureSideWidth;
-	m_depth = 1;
-
 	// Create filler rectangle
 	uint8_t buffer[4*4*4];
 	memset( buffer, 255, 4 * 4 * 4);
@@ -103,6 +50,24 @@ void FontManager::initAtlas(uint32_t textureSideWidth)
 	m_blackGlyph.texture_y1 -= texUnit;*/
 	
 }
+
+FontManager::~FontManager()
+{
+	assert(m_fontHandles.getNumHandles() == 0 && "All the fonts must be destroyed before destroying the manager");
+	delete [] m_cachedFonts;
+
+	assert(m_filesHandles.getNumHandles() == 0 && "All the font files must be destroyed before destroying the manager");
+	delete [] m_cachedFiles;
+	
+	delete [] m_buffer;
+	
+	if(m_ownAtlas)
+	{		
+		delete m_atlas;
+	}
+}
+
+
 
 TrueTypeHandle FontManager::loadTrueTypeFromFile(const char* fontPath, int32_t fontIndex)
 {
@@ -377,8 +342,7 @@ bool FontManager::getGlyphInfo(FontHandle fontHandle, CodePoint_t codePoint, Gly
 bool FontManager::addBitmap(GlyphInfo& glyphInfo, const uint8_t* data)
 {
 	uint16_t x,y,side;
-	uint16_t hd = m_atlas->addRegion(glyphInfo.width, glyphInfo.height, data, AtlasRegion::TYPE_GRAY);
-	glyphInfo.regionIndex = hd;
+	glyphInfo.regionIndex = m_atlas->addRegion(glyphInfo.width, glyphInfo.height, data, AtlasRegion::TYPE_GRAY);
 
 	return true;
 }

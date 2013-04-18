@@ -159,7 +159,7 @@ void TextBufferManager::submitTextBuffer(TextBufferHandle _handle, uint8_t _id, 
 	size_t vertexSize = bc.textBuffer.getVertexCount() * bc.textBuffer.getVertexSize();
 	const bgfx::Memory* mem;
 
-	bgfx::setTexture(0, m_u_texColor, m_fontManager->getTextureHandle() );
+	bgfx::setTexture(0, m_u_texColor, m_fontManager->getAtlas().getTextureHandle());
 	float inverse_gamme = 1.0f/2.2f;
 	bgfx::setUniform(m_u_inverse_gamma, &inverse_gamme);
 	

@@ -82,6 +82,9 @@ public:
 
 	//retrieve a region info
 	const AtlasRegion& getRegion(uint16_t handle) const { return m_regions[handle]; }
+	
+	/// retrieve the size of side of a texture in pixels
+	uint16_t getTextureSize(){ return m_textureSize; }
 
 	/// retrieve the usage ratio of the atlas
 	float getUsageRatio() const { return 0.0f; }

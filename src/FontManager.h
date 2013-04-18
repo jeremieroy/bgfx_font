@@ -2,23 +2,12 @@
  * License: http://www.opensource.org/licenses/BSD-2-Clause
 */
 #pragma once
-/// Glyph stash implementation
-/// Inspired from texture-atlas from freetype-gl (http://code.google.com/p/freetype-gl/)
-/// by Nicolas Rougier (Nicolas.Rougier@inria.fr)
-
-/// The actual implementation is based on the article by Jukka Jylänki : "A
-/// Thousand Ways to Pack the Bin - A Practical Approach to Two-Dimensional
-/// Rectangle Bin Packing", February 27, 2010.
-/// More precisely, this is an implementation of the Skyline Bottom-Left
-/// algorithm based on C++ sources provided by Jukka Jylänki at:
-/// http://clb.demon.fi/files/RectangleBinPack/
 
 #include "bgfx_font_types.h"
 #include "TrueTypeFont.h"
 #include "cube_atlas.h"
 #include <bgfx.h>
 #include <bx/handlealloc.h>
-#include <stdlib.h> // size_t
 
 #if BGFX_CONFIG_USE_TINYSTL
 namespace tinystl
@@ -49,16 +38,14 @@ namespace bgfx_font
 class FontManager
 {
 public:
-	///create the font manager using an external cube atlas
-	FontManager(uint32_t textureSideWidth, bgfx::TextureHandle _handle);
+	///create the font manager using an external cube atlas (doesn't take ownership of the atlas)
+	FontManager(Atlas* atlas);
 	//create the font manager and create the texture cube as BGRA8 with linear filtering
 	FontManager(uint32_t textureSideWidth=512);
 	~FontManager();
-		
-	/// retrieve the textureHandle (cube) used by the font manager (e.g. to visualize it)
-	bgfx::TextureHandle getTextureHandle() const { return m_atlas->getTextureHandle(); }
-	/// retrieve the rectangle packer used by the font manager (e.g. to add stuff to it)
-	//RectanglePackerCube& getRectanglePacker() {return m_packer; }
+
+	/// retrieve the atlas used by the font manager (e.g. to add stuff to it)
+	Atlas& getAtlas() {return (*m_atlas); }
 		
 	GlyphInfo& getBlackGlyph(){ return m_blackGlyph; }
 	
@@ -73,7 +60,7 @@ public:
 
 	/// unload a TrueType font (free font memory) but keep loaded glyphs
 	void unLoadTrueType(TrueTypeHandle handle);
-
+	
 	/// return a font descriptor whose height is a fixed pixel size	
 	FontHandle createFontByPixelSize(TrueTypeHandle handle, uint32_t typefaceIndex, uint32_t pixelSize, FontType fontType = FONT_TYPE_ALPHA);
 
@@ -104,16 +91,19 @@ public:
 	/// return the font descriptor of a font
 	/// @remark the handle is required to be valid
 	const FontInfo& getFontInfo(FontHandle handle);
-
+	
 	/// Return the rendering informations about the glyph region
 	/// Load the glyph from a TrueType font if possible
 	/// @return true if the Glyph is available
 	bool getGlyphInfo(FontHandle fontHandle, CodePoint_t codePoint, GlyphInfo& outInfo);
-	Atlas* m_atlas;
+	
+	/// pack the glyph UV coordinates (forward atlas function)
+	void packUV( uint16_t handle, uint8_t* vertexBuffer, uint32_t offset, uint32_t stride ) { m_atlas->packUV(handle, vertexBuffer, offset, stride); }
 private:
+	void init(uint32_t textureSideWidth);
 
-	void createAtlas(uint32_t textureSideWidth);
-	void initAtlas(uint32_t textureSideWidth);
+	bool m_ownAtlas;
+	Atlas* m_atlas;
 	
 	
 	typedef stl::unordered_map<CodePoint_t, GlyphInfo> GlyphHash_t;	
@@ -138,14 +128,7 @@ private:
 	};	
 	bx::HandleAlloc m_filesHandles;
 	CachedFile* m_cachedFiles;	
-	
-	//texture cube data
-	uint16_t m_textureWidth;
-	uint16_t m_depth;
-	bool m_ownTexture;
-	//bgfx::TextureHandle m_textureHandle;
-	//RectanglePackerCube m_packer;
-	
+		
 	GlyphInfo m_blackGlyph;
 		
 	bool addBitmap(GlyphInfo& glyphInfo, const uint8_t* data);	
