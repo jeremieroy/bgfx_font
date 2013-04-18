@@ -127,21 +127,11 @@ namespace bgfx_font
 		/// For vertical text layouts, this is the unscaled vertical distance in pixels
 		/// used to increment the pen position when the glyph is drawn as part of a string of text.
 		float advance_y;
-
-		/// texture coordinates are expressed in a normalized ratio of the texture size 
-		/// that map [0,width] and  [0,height]  to [0;32767]		
-		/// left texture coordinates 
-		int16_t texture_x0;
-		/// top texture coordinates 
-		int16_t texture_y0;		
-		/// right texture coordinates 
-		int16_t texture_x1;
-		/// bottom texture coordinates 
-		int16_t texture_y1;
 		
-		int16_t side;
-		int16_t padding;
-		/// TODO handle kerning
+		/// region index in the atlas storing textures
+		uint16_t regionIndex;
+		///32 bits alignment
+		int16_t padding;		
 	};
 	
 	

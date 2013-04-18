@@ -15,10 +15,9 @@
 
 #include "bgfx_font_types.h"
 #include "TrueTypeFont.h"
-#include "RectanglePacker.h"
-#include <bx/handlealloc.h>
+#include "cube_atlas.h"
 #include <bgfx.h>
-
+#include <bx/handlealloc.h>
 #include <stdlib.h> // size_t
 
 #if BGFX_CONFIG_USE_TINYSTL
@@ -50,17 +49,16 @@ namespace bgfx_font
 class FontManager
 {
 public:
-	///create the font manager using an external texture cube
-	/// @remark format must be BGRA8 and linear filtering must be ON for distance field font.
+	///create the font manager using an external cube atlas
 	FontManager(uint32_t textureSideWidth, bgfx::TextureHandle _handle);
 	//create the font manager and create the texture cube as BGRA8 with linear filtering
 	FontManager(uint32_t textureSideWidth=512);
 	~FontManager();
 		
 	/// retrieve the textureHandle (cube) used by the font manager (e.g. to visualize it)
-	bgfx::TextureHandle getTextureHandle() { return m_textureHandle; }
+	bgfx::TextureHandle getTextureHandle() const { return m_atlas->getTextureHandle(); }
 	/// retrieve the rectangle packer used by the font manager (e.g. to add stuff to it)
-	RectanglePackerCube& getRectanglePacker() {return m_packer; }
+	//RectanglePackerCube& getRectanglePacker() {return m_packer; }
 		
 	GlyphInfo& getBlackGlyph(){ return m_blackGlyph; }
 	
@@ -111,6 +109,7 @@ public:
 	/// Load the glyph from a TrueType font if possible
 	/// @return true if the Glyph is available
 	bool getGlyphInfo(FontHandle fontHandle, CodePoint_t codePoint, GlyphInfo& outInfo);
+	Atlas* m_atlas;
 private:
 
 	void createAtlas(uint32_t textureSideWidth);
@@ -144,8 +143,9 @@ private:
 	uint16_t m_textureWidth;
 	uint16_t m_depth;
 	bool m_ownTexture;
-	bgfx::TextureHandle m_textureHandle;
-	RectanglePackerCube m_packer;
+	//bgfx::TextureHandle m_textureHandle;
+	//RectanglePackerCube m_packer;
+	
 	GlyphInfo m_blackGlyph;
 		
 	bool addBitmap(GlyphInfo& glyphInfo, const uint8_t* data);	

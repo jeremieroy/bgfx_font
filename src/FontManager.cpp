@@ -19,7 +19,7 @@ FontManager::FontManager(uint32_t textureSideWidth, bgfx::TextureHandle _handle)
 	m_cachedFiles = new CachedFile[MAX_OPENED_FILES];
 	m_cachedFonts = new CachedFont[MAX_OPENED_FONT];
 	m_buffer = new uint8_t[MAX_FONT_BUFFER_SIZE];	
-	m_textureHandle = _handle;
+	//m_textureHandle = _handle;
 	initAtlas(textureSideWidth);
 	m_ownTexture = false;
 }
@@ -29,7 +29,8 @@ FontManager::FontManager(uint32_t textureSideWidth):m_filesHandles(MAX_OPENED_FI
 	m_cachedFiles = new CachedFile[MAX_OPENED_FILES];
 	m_cachedFonts = new CachedFont[MAX_OPENED_FONT];
 	m_buffer = new uint8_t[MAX_FONT_BUFFER_SIZE];
-	m_packer.init(textureSideWidth);
+	m_atlas = new Atlas(textureSideWidth);
+	//m_packer.init(textureSideWidth);
 	createAtlas(textureSideWidth);
 	initAtlas(textureSideWidth);
 	m_ownTexture = true;
@@ -44,40 +45,44 @@ FontManager::~FontManager()
 	delete [] m_cachedFiles;	
 	
 	delete [] m_buffer;
+	delete m_atlas;
 	if(m_ownTexture)
 	{
 		//destroy the texture atlas
-		bgfx::destroyTexture(m_textureHandle);
+		//bgfx::destroyTexture(m_textureHandle);
 	}
 }
 
 void FontManager::createAtlas(uint32_t textureSideWidth)
 {
-	assert(textureSideWidth >= 64 );
+	m_atlas = new Atlas(textureSideWidth);
+
+	//assert(textureSideWidth >= 64 );
 	//BGFX_TEXTURE_MIN_POINT|BGFX_TEXTURE_MAG_POINT|BGFX_TEXTURE_MIP_POINT;
 	//BGFX_TEXTURE_MIN_ANISOTROPIC|BGFX_TEXTURE_MAG_ANISOTROPIC|BGFX_TEXTURE_MIP_POINT
 	//BGFX_TEXTURE_U_CLAMP|BGFX_TEXTURE_V_CLAMP
-	uint32_t flags = 0;// BGFX_TEXTURE_MIN_ANISOTROPIC|BGFX_TEXTURE_MAG_ANISOTROPIC|BGFX_TEXTURE_MIP_POINT;
+	//uint32_t flags = 0;// BGFX_TEXTURE_MIN_ANISOTROPIC|BGFX_TEXTURE_MAG_ANISOTROPIC|BGFX_TEXTURE_MIP_POINT;
 
 	//Uncomment this to debug atlas
 	//const bgfx::Memory* mem = bgfx::alloc(width*height);
 	//memset(mem->data, 0, mem->size);
 	//const bgfx::Memory* mem = NULL;
 		
-	const uint32_t textureSide = 512;
-	m_textureHandle = 
+	//const uint32_t textureSide = 512;
+	/*m_textureHandle = 
 		bgfx::createTextureCube(6
 			, textureSide
 			, 1
 			, bgfx::TextureFormat::L8
 			, flags
 			);	
+			*/
 }
 
 void FontManager::initAtlas(uint32_t textureSideWidth)
 {
 	assert(textureSideWidth >= 64 );
-	m_packer.init(textureSideWidth);
+	//m_packer.init(textureSideWidth);
 
 	m_textureWidth = textureSideWidth;
 	m_depth = 1;
@@ -90,11 +95,13 @@ void FontManager::initAtlas(uint32_t textureSideWidth)
 	m_blackGlyph.height=3;
 	assert( addBitmap(m_blackGlyph, buffer) );
 	//make sure the black glyph doesn't bleed
-	int16_t texUnit = 65535 / m_textureWidth;
+	
+	/*int16_t texUnit = 65535 / m_textureWidth;
 	m_blackGlyph.texture_x0 += texUnit;
 	m_blackGlyph.texture_y0 += texUnit;
 	m_blackGlyph.texture_x1 -= texUnit;
-	m_blackGlyph.texture_y1 -= texUnit;
+	m_blackGlyph.texture_y1 -= texUnit;*/
+	
 }
 
 TrueTypeHandle FontManager::loadTrueTypeFromFile(const char* fontPath, int32_t fontIndex)
@@ -370,35 +377,8 @@ bool FontManager::getGlyphInfo(FontHandle fontHandle, CodePoint_t codePoint, Gly
 bool FontManager::addBitmap(GlyphInfo& glyphInfo, const uint8_t* data)
 {
 	uint16_t x,y,side;
-	// We want each bitmap to be separated by at least one black pixel
-	if(!m_packer.addRectangle((uint16_t) (glyphInfo.width + 1), (uint16_t) (glyphInfo.height + 1),  x, y,side))
-	{
-		return false;
-	}
-
-	//this allocation could maybe be avoided, will see later
-	const bgfx::Memory* mem = bgfx::alloc((uint32_t)(glyphInfo.width*glyphInfo.height*m_depth));
-	memcpy(mem->data, data, (size_t) (glyphInfo.width*glyphInfo.height*m_depth));	
-	bgfx::updateTextureCube(m_textureHandle, (uint8_t)side, 0, x, y, (uint16_t) glyphInfo.width, (uint16_t) glyphInfo.height, mem);	
-
-	glyphInfo.texture_x0 = x;
-	glyphInfo.texture_y0 = y;
-	glyphInfo.texture_x1 = x+(int16_t) glyphInfo.width;
-	glyphInfo.texture_y1 = y+(int16_t) glyphInfo.height;
-
-	float texMult = 65535.0f / ((float)(m_textureWidth));
-
-	const float centering = 0.0;//5f;
-	glyphInfo.texture_x0 =  ((int32_t)((glyphInfo.texture_x0 + centering) * texMult)-32768);
-	glyphInfo.texture_y0 =  ((int32_t)((glyphInfo.texture_y0 + centering) * texMult)-32768);
-	glyphInfo.texture_x1 =  ((int32_t)((glyphInfo.texture_x1 + centering) * texMult)-32768);
-	glyphInfo.texture_y1 =  ((int32_t)((glyphInfo.texture_y1 + centering) * texMult)-32768);
-	glyphInfo.side = side;
-
-	//assert(((glyphInfo.texture_x0 * m_textureWidth)/65535) == x);
-	//assert(((glyphInfo.texture_y0 * m_textureWidth)/65535) == y);
-	//assert(((glyphInfo.texture_x1 * m_textureWidth)/65535) == x+glyphInfo.width);
-	//assert(((glyphInfo.texture_y1 * m_textureWidth)/65535) == y+glyphInfo.height);
+	uint16_t hd = m_atlas->addRegion(glyphInfo.width, glyphInfo.height, data, AtlasRegion::TYPE_GRAY);
+	glyphInfo.regionIndex = hd;
 
 	return true;
 }

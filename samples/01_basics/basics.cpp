@@ -123,8 +123,16 @@ int _main_(int _argc, char** _argv)
 	bgfx_font::TextBufferHandle transientText = bgfx_font::createTextBuffer(bgfx_font::FONT_TYPE_ALPHA, bgfx_font::TRANSIENT);	
 				
 	float ra = 0, rb=0, rg=0;
+	uint32_t w = 0,h = 0;
     while (!processEvents(width, height, debug, reset) )
 	{
+		
+		if(w!=width|| h!=height)
+		{
+			w=width;
+			h= height;
+			printf("ri: %d,%d\n",width,height);
+		}
 		// Set view 0 default viewport.
 		bgfx::setViewRect(0, 0, 0, width, height);
 

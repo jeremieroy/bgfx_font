@@ -176,7 +176,7 @@ void TextBufferManager::submitTextBuffer(TextBufferHandle _handle, uint8_t _id, 
 	case FONT_TYPE_DISTANCE_SUBPIXEL:
 		bgfx::setProgram(m_distanceSubpixelProgram);
 		//TODO FIX COLOR !!!!
-		bgfx::setState( BGFX_STATE_RGB_WRITE |BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_FACTOR, BGFX_STATE_BLEND_INV_SRC_COLOR) , 0x000000FF);
+		bgfx::setState( BGFX_STATE_RGB_WRITE |BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_FACTOR, BGFX_STATE_BLEND_INV_SRC_COLOR) , bc.textBuffer.getTextColor());
 		break;	
 	}	
 

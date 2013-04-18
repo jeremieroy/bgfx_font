@@ -53,6 +53,7 @@ public:
 	/// size in bytes of an index
 	uint32_t getIndexSize(){ return sizeof(uint16_t); }
 
+	uint32_t getTextColor(){ return toABGR(m_textColor); }
 private:
 	void appendGlyph(CodePoint_t codePoint, const FontInfo& font, const GlyphInfo& glyphInfo);
 	void verticalCenterLastLine(float txtDecalY, float top, float bottom);
@@ -63,6 +64,7 @@ private:
 			(((rgba >> 16) & 0xff) << 8) |    
 			(((rgba >> 24) & 0xff) << 0);   
 	}
+
 	uint32_t m_styleFlags;
 
 	// color states
@@ -84,50 +86,12 @@ private:
 	float m_lineGap;
 	
 	///
-	FontManager* m_fontManager;
+	FontManager* m_fontManager;	
 	
-	void setVertex(size_t i, float scale, float x, float y, int16_t u, int16_t v, int16_t side, uint32_t rgba, uint8_t style = STYLE_NORMAL)
+	void setVertex(size_t i, float scale, float x, float y, uint32_t rgba, uint8_t style = STYLE_NORMAL)
 	{
 		m_vertexBuffer[i].x = x;
-		m_vertexBuffer[i].y = y;
-
-		const int16_t minVal = -32768;
-		const int16_t maxVal = 32767;
-
-		switch(side)
-		{
-		case 0:
-			m_vertexBuffer[i].u = maxVal;
-			m_vertexBuffer[i].v = -v;
-			m_vertexBuffer[i].w = -u;
-			break;
-		case 1:
-			m_vertexBuffer[i].u = minVal;
-			m_vertexBuffer[i].v = -v;
-			m_vertexBuffer[i].w = u;
-			break;
-		case 2:
-			m_vertexBuffer[i].u = u;
-			m_vertexBuffer[i].v = maxVal;
-			m_vertexBuffer[i].w = v;
-			break;
-		case 3:
-			m_vertexBuffer[i].u = u;
-			m_vertexBuffer[i].v = minVal;
-			m_vertexBuffer[i].w = -v;
-			break;
-		case 4:
-			m_vertexBuffer[i].u = u;
-			m_vertexBuffer[i].v = -v;
-			m_vertexBuffer[i].w = maxVal;
-			break;
-		case 5:
-			m_vertexBuffer[i].u = -u;
-			m_vertexBuffer[i].v = -v;
-			m_vertexBuffer[i].w = minVal;
-			break;
-		}
-		m_vertexBuffer[i].t = (int16_t) ((32767.0f/16.0f) / scale);
+		m_vertexBuffer[i].y = y;		
 		m_vertexBuffer[i].rgba = rgba;
 		m_styleBuffer[i] = style;
 	}
@@ -136,7 +100,7 @@ private:
 	{		
 		float x,y;
 		int16_t u,v,w,t;
-		uint32_t rgba;
+		uint32_t rgba;		
 	};
 
 	TextVertex* m_vertexBuffer;
