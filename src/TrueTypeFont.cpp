@@ -207,6 +207,7 @@ bool TrueTypeFont::bakeGlyphSubpixel(const FontInfo& fontInfo,CodePoint_t codePo
 	return true;
 }
 
+//TODO optimize: remove dynamic allocation and convert double to float
 void make_distance_map( unsigned char *img, unsigned char *outImg, unsigned int width, unsigned int height )
 {
     short * xdist = (short *)  malloc( width * height * sizeof(short) );
@@ -291,8 +292,8 @@ bool TrueTypeFont::bakeGlyphDistance(const FontInfo& fontInfo, CodePoint_t codeP
 	
 	glyphInfo.glyphIndex = FT_Get_Char_Index( holder->face, codePoint );
 	
-	FT_Int32 loadMode = FT_LOAD_DEFAULT|FT_LOAD_NO_HINTING; //FT_LOAD_TARGET_MONO;
-	FT_Render_Mode renderMode = FT_RENDER_MODE_NORMAL;//FT_RENDER_MODE_MONO
+	FT_Int32 loadMode = FT_LOAD_DEFAULT|FT_LOAD_NO_HINTING;
+	FT_Render_Mode renderMode = FT_RENDER_MODE_NORMAL;
 
 	FT_GlyphSlot slot = holder->face->glyph;
 	FT_Error error = FT_Load_Glyph(  holder->face, glyphInfo.glyphIndex, loadMode );
@@ -322,18 +323,6 @@ bool TrueTypeFont::bakeGlyphDistance(const FontInfo& fontInfo, CodePoint_t codeP
 	int charsize = 1;
 	int depth=1;
 	int stride = bitmap->bitmap.pitch;
-	
-	/*
-	const uint8_t* src = bitmap->bitmap.buffer;
-	for( int y=0; y<h; ++y )
-	{		
-		for( int x=0; x<w; ++x )
-		{
-			uint32_t idx = y*w+x;
-			outBuffer[idx] = ((src[x / 8]) & (1 << (7 - (x % 8)))) ? 255 : 0;
-		}
-		src+=stride;
-	}*/	
 	
 	for( int i=0; i<h; ++i )
     {	
