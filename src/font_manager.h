@@ -135,7 +135,7 @@ public:
 	TrueTypeHandle loadTrueTypeFromMemory(const uint8_t* buffer, uint32_t size, int32_t fontIndex = 0);
 
 	/// unload a TrueType font (free font memory) but keep loaded glyphs
-	void unLoadTrueType(TrueTypeHandle handle);
+	void unloadTrueType(TrueTypeHandle handle);
 	
 	/// return a font whose height is a fixed pixel size	
 	FontHandle createFontByPixelSize(TrueTypeHandle handle, uint32_t typefaceIndex, uint32_t pixelSize, FontType fontType = FONT_TYPE_ALPHA);

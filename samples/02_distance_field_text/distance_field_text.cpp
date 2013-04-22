@@ -85,7 +85,7 @@ int _main_(int _argc, char** _argv)
 		fonts[fontsCount++] = font;
 	}
 	//You can unload the truetype files at this stage, but in that case, the set of glyph's will be limited to the set of preloaded glyph
-	fontManager->unLoadTrueType(times_tt);
+	fontManager->unloadTrueType(times_tt);
 			
 	bgfx_font::TextBufferHandle staticText = textBufferManager->createTextBuffer(bgfx_font::FONT_TYPE_DISTANCE_SUBPIXEL, bgfx_font::STATIC);
 	

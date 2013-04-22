@@ -77,7 +77,7 @@ int _main_(int _argc, char** _argv)
 	fontManager->preloadGlyph(times_24, L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ. \n");
 		
 	//You can unload the truetype files at this stage, but in that case, the set of glyph's will be limited to the set of preloaded glyph
-	fontManager->unLoadTrueType(times_tt);
+	fontManager->unloadTrueType(times_tt);
 
 	//this font doesn't have any preloaded glyph's but the truetype file is loaded
 	//so glyph will be generated as needed
@@ -189,7 +189,7 @@ int _main_(int _argc, char** _argv)
 	}
 	
 	
-	fontManager->unLoadTrueType(consola_tt);
+	fontManager->unloadTrueType(consola_tt);
 	fontManager->destroyFont(consola_16);
 	fontManager->destroyFont(times_24);
 

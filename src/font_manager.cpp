@@ -3,7 +3,13 @@
 */
 #include "font_manager.h"
 #include "cube_atlas.h"
+
+#pragma warning( push )
+#pragma warning( disable: 4146 )
+#pragma warning( disable: 4700 )
 #include "FreeType.h"
+#pragma warning( pop )
+
 #include "edtaa3func.h"
 #include <math.h>
 #include <assert.h>
@@ -554,7 +560,7 @@ TrueTypeHandle FontManager::loadTrueTypeFromMemory(const uint8_t* buffer, uint32
 	return ret;
 }
 
-void FontManager::unLoadTrueType(TrueTypeHandle handle)
+void FontManager::unloadTrueType(TrueTypeHandle handle)
 {
 	assert(bgfx::invalidHandle != handle.idx);
 	delete m_cachedFiles[handle.idx].buffer;
