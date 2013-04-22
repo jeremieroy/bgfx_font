@@ -14,7 +14,7 @@ namespace bgfx_font
 struct Context
 {	
 	bgfx_font::FontManager fontManager;	
-	bgfx_font::TextBufferManager textManager;	
+	bgfx_font::TextBufferManager* textManager;	
 };
 
 static Context* g_context = NULL;
@@ -23,12 +23,14 @@ void init(const char* shaderPath)
 {
 	assert(g_context == NULL && "A context can only be initialized once");
 	g_context = new Context;	
-	g_context->textManager.init(&g_context->fontManager, shaderPath);
+	g_context->textManager = new bgfx_font::TextBufferManager(&g_context->fontManager);
+	g_context->textManager->init(shaderPath);
 }
 		
 void shutdown()
 {
 	assert(g_context != NULL && "Context not initialized");		
+	delete g_context->textManager;
 	delete g_context;
 	g_context = NULL;	
 }
@@ -91,95 +93,95 @@ void bakeAndSaveFont(FontHandle _handle, const char * _fontPath, const char * _f
 TextBufferHandle createTextBuffer(FontType _type, BufferType bufferType)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	return g_context->textManager.createTextBuffer(_type,bufferType);
+	return g_context->textManager->createTextBuffer(_type,bufferType);
 }
 
 void destroyTextBuffer(TextBufferHandle _handle)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	g_context->textManager.destroyTextBuffer(_handle);	
+	g_context->textManager->destroyTextBuffer(_handle);	
 }
 
 void setTextStyle(TextBufferHandle _handle, uint32_t flags)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager.getTextBuffer(_handle);
+	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
 	txt->setStyle(flags);
 }
 
 void setTextColor(TextBufferHandle _handle, uint32_t _rgba)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager.getTextBuffer(_handle);
+	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
 	txt->setTextColor(_rgba);
 }
 	
 void setTextBackgroundColor(TextBufferHandle _handle, uint32_t _rgba)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager.getTextBuffer(_handle);
+	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
 	txt->setBackgroundColor(_rgba);
 }
 
 void setOverlineColor(TextBufferHandle _handle, uint32_t _rgba)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager.getTextBuffer(_handle);
+	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
 	txt->setOverlineColor(_rgba);
 }
 
 void setUnderlineColor(TextBufferHandle _handle, uint32_t _rgba)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager.getTextBuffer(_handle);
+	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
 	txt->setUnderlineColor(_rgba);
 }
 	
 void setStrikeThroughColor(TextBufferHandle _handle, uint32_t _rgba )
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager.getTextBuffer(_handle);
+	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
 	txt->setStrikeThroughColor(_rgba);
 }
 	
 void setPenPosition(TextBufferHandle _handle, float x, float y)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager.getTextBuffer(_handle);
+	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
 	txt->setPenPosition(x,y);
 }
 	
 void appendText(TextBufferHandle _handle, FontHandle fontHandle, const char * _string)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager.getTextBuffer(_handle);
+	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
 	txt->appendText(fontHandle, _string);
 }
 
 void appendText(TextBufferHandle _handle, FontHandle fontHandle, const wchar_t * _string)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager.getTextBuffer(_handle);
+	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
 	txt->appendText(fontHandle, _string);
 }
 
 void clearTextBuffer(TextBufferHandle _handle)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager.getTextBuffer(_handle);
+	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
 	txt->clearTextBuffer();
 }
 	
 void submitTextBuffer(TextBufferHandle _handle, uint8_t _id,  int32_t _depth)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	g_context->textManager.submitTextBuffer(_handle, _id, _depth);	
+	g_context->textManager->submitTextBuffer(_handle, _id, _depth);	
 }
 
 void submitTextBufferMask(TextBufferHandle _handle, uint32_t _viewMask, int32_t _depth)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	g_context->textManager.submitTextBufferMask(_handle, _viewMask, _depth);
+	g_context->textManager->submitTextBufferMask(_handle, _viewMask, _depth);
 }
 
 }

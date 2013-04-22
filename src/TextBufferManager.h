@@ -16,7 +16,7 @@ public:
 	TextBufferManager(FontManager* fontManager = NULL);
 	~TextBufferManager();
 	
-	void init(FontManager* fontManager, const char* shaderPath);
+	void init(const char* shaderPath);
 
 	TextBufferHandle createTextBuffer(FontType _type, BufferType bufferType);
 	void destroyTextBuffer(TextBufferHandle handle);

@@ -62,9 +62,9 @@ TextBufferManager::~TextBufferManager()
 	
 }
 
-void TextBufferManager::init(FontManager* fontManager, const char* shaderPath)
+void TextBufferManager::init(const char* shaderPath)
 {
-	m_fontManager = fontManager;
+	//m_fontManager = fontManager;
 
 	m_vertexDecl.begin();
 	m_vertexDecl.add(bgfx::Attrib::Position, 2, bgfx::AttribType::Float);
