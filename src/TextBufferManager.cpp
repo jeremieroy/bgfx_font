@@ -2,6 +2,7 @@
  * License: http://www.opensource.org/licenses/BSD-2-Clause
 */
 #include "TextBufferManager.h"
+#include "cube_atlas.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -375,7 +376,7 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		float x1 = ( (float)x0 + (glyphInfo.advance_x));
 		float y1 = ( m_penY - m_lineDescender + m_lineGap );
 
-		m_fontManager->getAtlas().packUV(blackGlyph.regionIndex, (uint8_t*)m_vertexBuffer,sizeof(TextVertex) *m_vertexCount + offsetof(TextVertex, u), sizeof(TextVertex));
+		m_fontManager->getAtlas()->packUV(blackGlyph.regionIndex, (uint8_t*)m_vertexBuffer,sizeof(TextVertex) *m_vertexCount + offsetof(TextVertex, u), sizeof(TextVertex));
 
 		setVertex(m_vertexCount+0, font.scale, x0, y0, m_backgroundColor,STYLE_BACKGROUND);
 		setVertex(m_vertexCount+1, font.scale, x0, y1, m_backgroundColor,STYLE_BACKGROUND);
@@ -399,7 +400,7 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		float x1 = ( (float)x0 + (glyphInfo.advance_x));
 		float y1 = y0+font.underline_thickness;
 
-		m_fontManager->getAtlas().packUV(blackGlyph.regionIndex, (uint8_t*)m_vertexBuffer,sizeof(TextVertex) *m_vertexCount + offsetof(TextVertex, u), sizeof(TextVertex));
+		m_fontManager->getAtlas()->packUV(blackGlyph.regionIndex, (uint8_t*)m_vertexBuffer,sizeof(TextVertex) *m_vertexCount + offsetof(TextVertex, u), sizeof(TextVertex));
 
 		setVertex(m_vertexCount+0, font.scale, x0, y0, m_underlineColor,STYLE_UNDERLINE);
 		setVertex(m_vertexCount+1, font.scale, x0, y1, m_underlineColor,STYLE_UNDERLINE);
@@ -423,7 +424,7 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		float x1 = ( (float)x0 + (glyphInfo.advance_x));
 		float y1 = y0+font.underline_thickness;
 
-		m_fontManager->getAtlas().packUV(blackGlyph.regionIndex, (uint8_t*)m_vertexBuffer,sizeof(TextVertex) *m_vertexCount + offsetof(TextVertex, u), sizeof(TextVertex));
+		m_fontManager->getAtlas()->packUV(blackGlyph.regionIndex, (uint8_t*)m_vertexBuffer,sizeof(TextVertex) *m_vertexCount + offsetof(TextVertex, u), sizeof(TextVertex));
 
 		setVertex(m_vertexCount+0, font.scale, x0, y0, m_overlineColor,STYLE_OVERLINE);
 		setVertex(m_vertexCount+1, font.scale, x0, y1, m_overlineColor,STYLE_OVERLINE);
@@ -448,7 +449,7 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 		float x1 = ( (float)x0 + (glyphInfo.advance_x) );
 		float y1 = y0+font.underline_thickness;
 		
-		m_fontManager->getAtlas().packUV(blackGlyph.regionIndex, (uint8_t*)m_vertexBuffer,sizeof(TextVertex) *m_vertexCount + offsetof(TextVertex, u), sizeof(TextVertex));
+		m_fontManager->getAtlas()->packUV(blackGlyph.regionIndex, (uint8_t*)m_vertexBuffer,sizeof(TextVertex) *m_vertexCount + offsetof(TextVertex, u), sizeof(TextVertex));
 
 		setVertex(m_vertexCount+0, font.scale, x0, y0, m_strikeThroughColor,STYLE_STRIKE_THROUGH);
 		setVertex(m_vertexCount+1, font.scale, x0, y1, m_strikeThroughColor,STYLE_STRIKE_THROUGH);
@@ -475,7 +476,7 @@ void TextBuffer::appendGlyph(CodePoint_t codePoint, const FontInfo& font, const 
 
 	float shift = x0_precise - x0;
 	
-	m_fontManager->getAtlas().packUV(glyphInfo.regionIndex, (uint8_t*)m_vertexBuffer, sizeof(TextVertex) *m_vertexCount + offsetof(TextVertex, u), sizeof(TextVertex));
+	m_fontManager->getAtlas()->packUV(glyphInfo.regionIndex, (uint8_t*)m_vertexBuffer, sizeof(TextVertex) *m_vertexCount + offsetof(TextVertex, u), sizeof(TextVertex));
 
 	setVertex(m_vertexCount+0, font.scale, x0, y0, m_textColor);
 	setVertex(m_vertexCount+1, font.scale, x0, y1, m_textColor);
@@ -633,7 +634,7 @@ void TextBufferManager::submitTextBuffer(TextBufferHandle _handle, uint8_t _id, 
 	size_t vertexSize = bc.textBuffer->getVertexCount() * bc.textBuffer->getVertexSize();
 	const bgfx::Memory* mem;
 
-	bgfx::setTexture(0, m_u_texColor, m_fontManager->getAtlas().getTextureHandle());
+	bgfx::setTexture(0, m_u_texColor, m_fontManager->getAtlas()->getTextureHandle());
 	float inverse_gamme = 1.0f/2.2f;
 	bgfx::setUniform(m_u_inverse_gamma, &inverse_gamme);
 	

@@ -2,8 +2,6 @@
  * License: http://www.opensource.org/licenses/BSD-2-Clause
 */
 #pragma once
-#include <bgfx.h>
-#include <bx/handlealloc.h>
 #include "FontManager.h"
 
 namespace bgfx_font

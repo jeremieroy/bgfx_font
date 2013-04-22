@@ -6,7 +6,7 @@
 #include "edtaa3func.h"
 #include <math.h>
 #include <assert.h>
-
+#include "cube_atlas.h"
 
 #if BGFX_CONFIG_USE_TINYSTL
 namespace tinystl

@@ -4,7 +4,8 @@
 #pragma once
 #include <bgfx.h>
 #include <bx/handlealloc.h>
-#include "cube_atlas.h"
+
+class Atlas;
 
 namespace bgfx_font
 {
@@ -122,7 +123,7 @@ public:
 	~FontManager();
 
 	/// retrieve the atlas used by the font manager (e.g. to add stuff to it)
-	Atlas& getAtlas() { return (*m_atlas); }	
+	Atlas* getAtlas() { return m_atlas; }	
 	
 	/// load a TrueType font from a file path
 	/// @return invalid handle if the loading fail
