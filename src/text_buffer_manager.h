@@ -2,7 +2,7 @@
  * License: http://www.opensource.org/licenses/BSD-2-Clause
 */
 #pragma once
-#include "FontManager.h"
+#include "font_manager.h"
 
 namespace bgfx_font
 {

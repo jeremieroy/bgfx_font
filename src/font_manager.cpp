@@ -1,12 +1,13 @@
 /* Copyright 2013 Jeremie Roy. All rights reserved.
  * License: http://www.opensource.org/licenses/BSD-2-Clause
 */
-#include "FontManager.h"
+#include "font_manager.h"
+#include "cube_atlas.h"
 #include "FreeType.h"
 #include "edtaa3func.h"
 #include <math.h>
 #include <assert.h>
-#include "cube_atlas.h"
+
 
 #if BGFX_CONFIG_USE_TINYSTL
 namespace tinystl

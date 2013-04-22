@@ -2,8 +2,8 @@
  * License: http://www.opensource.org/licenses/BSD-2-Clause
 */
 #include "bgfx_font.h"
-#include "FontManager.h"
-#include "TextBufferManager.h"
+#include "font_manager.h"
+#include "text_buffer_manager.h"
 
 #include <assert.h>
 #include <unordered_map>

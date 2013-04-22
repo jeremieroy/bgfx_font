@@ -3,8 +3,8 @@
 */
 #pragma once
 #include <bgfx.h> 
-#include "../src/FontManager.h"
-#include "../src/TextBufferManager.h"
+#include "../src/font_manager.h"
+#include "../src/text_buffer_manager.h"
 namespace bgfx_font
 {
 	/// initialize bgfx_text library

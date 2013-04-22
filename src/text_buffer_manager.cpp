@@ -1,7 +1,7 @@
 /* Copyright 2013 Jeremie Roy. All rights reserved.
  * License: http://www.opensource.org/licenses/BSD-2-Clause
 */
-#include "TextBufferManager.h"
+#include "text_buffer_manager.h"
 #include "cube_atlas.h"
 
 #include <assert.h>
