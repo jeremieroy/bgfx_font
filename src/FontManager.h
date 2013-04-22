@@ -2,14 +2,115 @@
  * License: http://www.opensource.org/licenses/BSD-2-Clause
 */
 #pragma once
-
-#include "bgfx_font_types.h"
-#include "cube_atlas.h"
 #include <bgfx.h>
 #include <bx/handlealloc.h>
+#include "cube_atlas.h"
 
 namespace bgfx_font
 {
+
+enum FontType
+{
+	FONT_TYPE_ALPHA    = 0x00000100 , // L8
+	FONT_TYPE_LCD      = 0x00000200,  // BGRA8
+	FONT_TYPE_RGBA     = 0x00000300,  // BGRA8
+	FONT_TYPE_DISTANCE = 0x00000400,   // L8
+	FONT_TYPE_DISTANCE_SUBPIXEL = 0x00000500   // L8
+};
+
+struct FontInfo
+{
+	//the font height in pixel 
+	uint16_t pixelSize;
+	/// Rendering type used for the font
+	int16_t fontType;
+
+	/// The pixel extents above the baseline in pixels (typically positive)
+	float ascender;
+	/// The extents below the baseline in pixels (typically negative)
+	float descender;
+	/// The spacing in pixels between one row's descent and the next row's ascent
+	float lineGap;
+	/// The thickness of the under/hover/striketrough line in pixels
+	float underline_thickness;
+	/// The position of the underline relatively to the baseline
+	float underline_position;
+				
+	//scale to apply to glyph data
+	float scale;
+};
+
+// Glyph metrics:
+// --------------
+//
+//                       xmin                     xmax
+//                        |                         |
+//                        |<-------- width -------->|
+//                        |                         |    
+//              |         +-------------------------+----------------- ymax
+//              |         |    ggggggggg   ggggg    |     ^        ^
+//              |         |   g:::::::::ggg::::g    |     |        | 
+//              |         |  g:::::::::::::::::g    |     |        | 
+//              |         | g::::::ggggg::::::gg    |     |        | 
+//              |         | g:::::g     g:::::g     |     |        | 
+//    offset_x -|-------->| g:::::g     g:::::g     |  offset_y    | 
+//              |         | g:::::g     g:::::g     |     |        | 
+//              |         | g::::::g    g:::::g     |     |        | 
+//              |         | g:::::::ggggg:::::g     |     |        |  
+//              |         |  g::::::::::::::::g     |     |      height
+//              |         |   gg::::::::::::::g     |     |        | 
+//  baseline ---*---------|---- gggggggg::::::g-----*--------      |
+//            / |         |             g:::::g     |              | 
+//     origin   |         | gggggg      g:::::g     |              | 
+//              |         | g:::::gg   gg:::::g     |              | 
+//              |         |  g::::::ggg:::::::g     |              | 
+//              |         |   gg:::::::::::::g      |              | 
+//              |         |     ggg::::::ggg        |              | 
+//              |         |         gggggg          |              v
+//              |         +-------------------------+----------------- ymin
+//              |                                   |
+//              |------------- advance_x ---------->|
+
+/// Unicode value of a character
+typedef int32_t CodePoint_t;
+
+/// A structure that describe a glyph.	
+struct GlyphInfo
+{
+	/// Index for faster retrieval
+	int32_t glyphIndex;
+	
+	/// Glyph's width in pixels.
+	float width;
+
+	/// Glyph's height in pixels.
+	float height;
+	
+	/// Glyph's left offset in pixels
+	float offset_x;
+
+	/// Glyph's top offset in pixels
+	/// Remember that this is the distance from the baseline to the top-most
+	/// glyph scan line, upwards y coordinates being positive.
+	float offset_y;
+
+	/// For horizontal text layouts, this is the unscaled horizontal distance in pixels
+	/// used to increment the pen position when the glyph is drawn as part of a string of text.
+	float advance_x;
+	
+	/// For vertical text layouts, this is the unscaled vertical distance in pixels
+	/// used to increment the pen position when the glyph is drawn as part of a string of text.
+	float advance_y;
+		
+	/// region index in the atlas storing textures
+	uint16_t regionIndex;
+	///32 bits alignment
+	int16_t padding;		
+};
+
+BGFX_HANDLE(TrueTypeHandle);
+BGFX_HANDLE(FontHandle);
+
 class FontManager
 {
 public:

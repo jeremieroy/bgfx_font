@@ -45,7 +45,8 @@ TrueTypeHandle loadTrueTypeFont(const bgfx::Memory* _mem)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
 	assert(false && "Not implemented yet");
-	return TrueTypeHandle(INVALID_HANDLE_ID);
+	TrueTypeHandle invalid = BGFX_INVALID_HANDLE;
+	return invalid;	
 }
 
 void unloadTrueTypeFont(TrueTypeHandle _handle)
@@ -70,7 +71,8 @@ FontHandle loadBakedFont(const char * _fontPath, const char * _fontName)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
 	assert(false && "Not implemented yet");
-	return FontHandle(INVALID_HANDLE_ID);
+	FontHandle invalid = BGFX_INVALID_HANDLE;
+	return invalid;
 }
 
 void destroyFont(FontHandle _handle)
@@ -105,71 +107,61 @@ void destroyTextBuffer(TextBufferHandle _handle)
 void setTextStyle(TextBufferHandle _handle, uint32_t flags)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
-	txt->setStyle(flags);
+	g_context->textManager->setStyle(_handle, flags);
 }
 
 void setTextColor(TextBufferHandle _handle, uint32_t _rgba)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
-	txt->setTextColor(_rgba);
+	g_context->textManager->setTextColor(_handle, _rgba);
 }
 	
 void setTextBackgroundColor(TextBufferHandle _handle, uint32_t _rgba)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
-	txt->setBackgroundColor(_rgba);
+	g_context->textManager->setBackgroundColor(_handle, _rgba);
 }
 
 void setOverlineColor(TextBufferHandle _handle, uint32_t _rgba)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
-	txt->setOverlineColor(_rgba);
+	g_context->textManager->setOverlineColor(_handle, _rgba);
 }
 
 void setUnderlineColor(TextBufferHandle _handle, uint32_t _rgba)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
-	txt->setUnderlineColor(_rgba);
+	g_context->textManager->setUnderlineColor(_handle, _rgba);
 }
 	
 void setStrikeThroughColor(TextBufferHandle _handle, uint32_t _rgba )
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
-	txt->setStrikeThroughColor(_rgba);
+	g_context->textManager->setStrikeThroughColor(_handle, _rgba);
 }
 	
 void setPenPosition(TextBufferHandle _handle, float x, float y)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
-	txt->setPenPosition(x,y);
+	g_context->textManager->setPenPosition(_handle, x,y);
 }
 	
 void appendText(TextBufferHandle _handle, FontHandle fontHandle, const char * _string)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
-	txt->appendText(fontHandle, _string);
+	g_context->textManager->appendText(_handle, fontHandle, _string);
 }
 
 void appendText(TextBufferHandle _handle, FontHandle fontHandle, const wchar_t * _string)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
-	txt->appendText(fontHandle, _string);
+	g_context->textManager->appendText(_handle, fontHandle, _string);
 }
 
 void clearTextBuffer(TextBufferHandle _handle)
 {
 	assert(g_context != NULL && "Context not initialized. Call bgfx_text::init(); ");
-	TextBuffer* txt = g_context->textManager->getTextBuffer(_handle);
-	txt->clearTextBuffer();
+	g_context->textManager->clearTextBuffer(_handle);
 }
 	
 void submitTextBuffer(TextBufferHandle _handle, uint8_t _id,  int32_t _depth)

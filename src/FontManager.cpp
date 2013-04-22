@@ -496,7 +496,8 @@ TrueTypeHandle FontManager::loadTrueTypeFromFile(const char* fontPath, int32_t f
 	pFile = fopen (fontPath, "rb");
 	if (pFile==NULL)
 	{
-		return TrueTypeHandle(INVALID_HANDLE_ID);
+		TrueTypeHandle invalid = BGFX_INVALID_HANDLE;
+		return invalid;
 	}
 	
 	// Go to the end of the file.
@@ -507,7 +508,8 @@ TrueTypeHandle FontManager::loadTrueTypeFromFile(const char* fontPath, int32_t f
 		if (bufsize == -1) 
 		{
 			fclose(pFile);
-			return TrueTypeHandle(INVALID_HANDLE_ID);
+			TrueTypeHandle invalid = BGFX_INVALID_HANDLE;
+			return invalid;
 		}
 		
 		uint8_t* buffer = new uint8_t[bufsize];
@@ -521,7 +523,8 @@ TrueTypeHandle FontManager::loadTrueTypeFromFile(const char* fontPath, int32_t f
 		{
 			fclose(pFile);
 			delete [] buffer;
-			return TrueTypeHandle(INVALID_HANDLE_ID);
+			TrueTypeHandle invalid = BGFX_INVALID_HANDLE;
+			return invalid;
 		}
 		fclose(pFile);
 
@@ -529,10 +532,12 @@ TrueTypeHandle FontManager::loadTrueTypeFromFile(const char* fontPath, int32_t f
 		assert(id != bx::HandleAlloc::invalid);
 		m_cachedFiles[id].buffer = buffer;
 		m_cachedFiles[id].bufferSize = bufsize;
-		return TrueTypeHandle(id);
+		TrueTypeHandle ret = {id};
+		return ret;
 	}
 	//TODO validate font
-	return TrueTypeHandle(INVALID_HANDLE_ID);
+	TrueTypeHandle invalid = BGFX_INVALID_HANDLE;
+	return invalid;
 }
 
 TrueTypeHandle FontManager::loadTrueTypeFromMemory(const uint8_t* buffer, uint32_t size, int32_t fontIndex)
@@ -543,13 +548,14 @@ TrueTypeHandle FontManager::loadTrueTypeFromMemory(const uint8_t* buffer, uint32
 	m_cachedFiles[id].bufferSize = size;
 	memcpy(m_cachedFiles[id].buffer, buffer, size);
 	
-	//TODO validate font
-	return TrueTypeHandle(id);
+	//TODO validate font	
+	TrueTypeHandle ret = {id};
+	return ret;
 }
 
 void FontManager::unLoadTrueType(TrueTypeHandle handle)
 {
-	assert(handle.isValid());
+	assert(bgfx::invalidHandle != handle.idx);
 	delete m_cachedFiles[handle.idx].buffer;
 	m_cachedFiles[handle.idx].bufferSize = 0;
 	m_cachedFiles[handle.idx].buffer = NULL;
@@ -558,13 +564,14 @@ void FontManager::unLoadTrueType(TrueTypeHandle handle)
 
 FontHandle FontManager::createFontByPixelSize(TrueTypeHandle handle, uint32_t typefaceIndex, uint32_t pixelSize, FontType fontType)
 {
-	assert(handle.isValid());	
+	assert(bgfx::invalidHandle != handle.idx);
 
 	TrueTypeFont* ttf = new TrueTypeFont();
 	if(!ttf->init(  m_cachedFiles[handle.idx].buffer,  m_cachedFiles[handle.idx].bufferSize, typefaceIndex, pixelSize))
 	{
 		delete ttf;
-		return FontHandle(INVALID_HANDLE_ID);
+		FontHandle invalid = BGFX_INVALID_HANDLE;
+		return invalid;
 	}
 	
 	uint16_t fontIdx = m_fontHandles.alloc();
@@ -576,12 +583,13 @@ FontHandle FontManager::createFontByPixelSize(TrueTypeHandle handle, uint32_t ty
 	m_cachedFonts[fontIdx].fontInfo.pixelSize = pixelSize;
 	m_cachedFonts[fontIdx].cachedGlyphs.clear();
 	m_cachedFonts[fontIdx].masterFontHandle.idx = -1;
-	return FontHandle(fontIdx);
+	FontHandle ret = {fontIdx};
+	return ret;
 }
 
 FontHandle FontManager::createScaledFontToPixelSize(FontHandle _baseFontHandle, uint32_t _pixelSize)
 {
-	assert(_baseFontHandle.isValid());
+	assert(bgfx::invalidHandle != _baseFontHandle.idx);
 	CachedFont& font = m_cachedFonts[_baseFontHandle.idx];
 	FontInfo& fontInfo = font.fontInfo;
 
@@ -601,24 +609,27 @@ FontHandle FontManager::createScaledFontToPixelSize(FontHandle _baseFontHandle, 
 	m_cachedFonts[fontIdx].fontInfo = newFontInfo;
 	m_cachedFonts[fontIdx].trueTypeFont = NULL;
 	m_cachedFonts[fontIdx].masterFontHandle = _baseFontHandle;
-	return FontHandle(fontIdx);
+	FontHandle ret = {fontIdx};
+	return ret;
 }
 
 FontHandle FontManager::loadBakedFontFromFile(const char* fontPath,  const char* descriptorPath)
 {
 	assert(false); //TODO implement
-	return FontHandle(INVALID_HANDLE_ID);
+	FontHandle invalid = BGFX_INVALID_HANDLE;
+	return invalid;
 }
 
 FontHandle FontManager::loadBakedFontFromMemory(const uint8_t* imageBuffer, uint32_t imageSize, const uint8_t* descriptorBuffer, uint32_t descriptorSize)
 {
 	assert(false); //TODO implement
-	return FontHandle(INVALID_HANDLE_ID);
+	FontHandle invalid = BGFX_INVALID_HANDLE;
+	return invalid;
 }
 
 void FontManager::destroyFont(FontHandle _handle)
 {
-	assert(_handle.isValid());
+	assert(bgfx::invalidHandle != _handle.idx);
 
 	if(m_cachedFonts[_handle.idx].trueTypeFont != NULL)
 	{
@@ -631,7 +642,7 @@ void FontManager::destroyFont(FontHandle _handle)
 
 bool FontManager::preloadGlyph(FontHandle handle, const wchar_t* _string)
 {
-	assert(handle.isValid());	
+	assert(bgfx::invalidHandle != handle.idx);
 	CachedFont& font = m_cachedFonts[handle.idx];
 	FontInfo& fontInfo = font.fontInfo;	
 
@@ -656,7 +667,7 @@ bool FontManager::preloadGlyph(FontHandle handle, const wchar_t* _string)
 
 bool FontManager::preloadGlyph(FontHandle handle, CodePoint_t codePoint)
 {
-	assert(handle.isValid());	
+	assert(bgfx::invalidHandle != handle.idx);
 	CachedFont& font = m_cachedFonts[handle.idx];
 	FontInfo& fontInfo = font.fontInfo;
 
@@ -710,7 +721,7 @@ bool FontManager::preloadGlyph(FontHandle handle, CodePoint_t codePoint)
 	}else
 	{
 		//retrieve glyph from parent font if any
-		if(font.masterFontHandle.isValid())
+		if(font.masterFontHandle.idx != bgfx::invalidHandle)
 		{
 			if(preloadGlyph(font.masterFontHandle, codePoint))
 			{
@@ -736,7 +747,7 @@ bool FontManager::preloadGlyph(FontHandle handle, CodePoint_t codePoint)
 
 const FontInfo& FontManager::getFontInfo(FontHandle handle)
 { 
-	assert(handle.isValid());
+	assert(handle.idx != bgfx::invalidHandle);
 	return m_cachedFonts[handle.idx].fontInfo;
 }
 
