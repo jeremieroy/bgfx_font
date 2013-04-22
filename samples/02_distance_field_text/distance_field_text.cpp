@@ -6,7 +6,8 @@
 #include <common/math.h>
 #include <common/processevents.h>
 
-#include "bgfx_font.h"
+#include "../src/font_manager.h"
+#include "../src/text_buffer_manager.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -61,13 +62,15 @@ int _main_(int _argc, char** _argv)
 	}
 
 	//init the text rendering system
-	bgfx_font::init(s_shaderPath);
+	bgfx_font::FontManager* fontManager = new bgfx_font::FontManager(512);
+	bgfx_font::TextBufferManager* textBufferManager = new bgfx_font::TextBufferManager(fontManager);
+	textBufferManager->init(s_shaderPath);
 
 	//load a truetype files
-	bgfx_font::TrueTypeHandle times_tt = bgfx_font::loadTrueTypeFont("c:/windows/fonts/times.ttf");	
-	bgfx_font::FontHandle distance_font = bgfx_font::createFont(times_tt, 0, 48, bgfx_font::FONT_TYPE_DISTANCE_SUBPIXEL);
+	bgfx_font::TrueTypeHandle times_tt = fontManager->loadTrueTypeFromFile("c:/windows/fonts/times.ttf");	
+	bgfx_font::FontHandle distance_font = fontManager->createFontByPixelSize(times_tt, 0, 48, bgfx_font::FONT_TYPE_DISTANCE_SUBPIXEL);
 	//preload glyph and generate (generate bitmap's)
-	bgfx_font::preloadGlyph(distance_font, L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ. \n");
+	fontManager->preloadGlyph(distance_font, L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ. \n");
 
 	uint32_t fontsCount = 0;
 	bgfx_font::FontHandle fonts[64];
@@ -78,32 +81,32 @@ int _main_(int _argc, char** _argv)
 	{		
 		if(i<32) step = 2;
 		//instantiate a usable font
-		bgfx_font::FontHandle font = bgfx_font::createScaledFont(distance_font, i);
+		bgfx_font::FontHandle font = fontManager->createScaledFontToPixelSize(distance_font, i);
 		fonts[fontsCount++] = font;
 	}
 	//You can unload the truetype files at this stage, but in that case, the set of glyph's will be limited to the set of preloaded glyph
-	bgfx_font::unloadTrueTypeFont(times_tt);
+	fontManager->unLoadTrueType(times_tt);
 			
-	bgfx_font::TextBufferHandle staticText = bgfx_font::createTextBuffer(bgfx_font::FONT_TYPE_DISTANCE_SUBPIXEL, bgfx_font::STATIC);
+	bgfx_font::TextBufferHandle staticText = textBufferManager->createTextBuffer(bgfx_font::FONT_TYPE_DISTANCE_SUBPIXEL, bgfx_font::STATIC);
 	
-	bgfx_font::setPenPosition(staticText, 10.0f, 10.0f);	
+	textBufferManager->setPenPosition(staticText, 10.0f, 10.0f);	
 	/*
 	for(size_t i = 0; i< fontsCount; ++i)
 	{
-		bgfx_font::appendText(staticText, fonts[i], L"aqkAQg");
-		//bgfx_font::appendText(staticText, fonts[i], L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\n");
+		textBufferManager->appendText(staticText, fonts[i], L"aqkAQg");
+		//textBufferManager->appendText(staticText, fonts[i], L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\n");
 		
 	}	
-	bgfx_font::appendText(staticText, fonts[0], "\n");
+	textBufferManager->appendText(staticText, fonts[0], "\n");
 	*/
-	bgfx_font::setTextColor(staticText, 0xFFFFFFFF);
-	//bgfx_font::setTextColor(staticText, 0x000000FF);
+	textBufferManager->setTextColor(staticText, 0xFFFFFFFF);
+	//textBufferManager->setTextColor(staticText, 0x000000FF);
 	for(size_t i = 0; i< fontsCount; ++i)
 	{
-		//bgfx_font::setPenPosition(staticText, 3.0f+ (float)i*0.3f,0);
-		//bgfx_font::appendText(staticText, fonts[16], L"The quick brown fox jumps over the lazy dog\n");		
-		bgfx_font::appendText(staticText, fonts[i], L"The quick brown fox jumps over the lazy dog\n");		
-		//bgfx_font::appendText(staticText, fonts[i], L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\n");
+		//textBufferManager->setPenPosition(staticText, 3.0f+ (float)i*0.3f,0);
+		//textBufferManager->appendText(staticText, fonts[16], L"The quick brown fox jumps over the lazy dog\n");		
+		textBufferManager->appendText(staticText, fonts[i], L"The quick brown fox jumps over the lazy dog\n");		
+		//textBufferManager->appendText(staticText, fonts[i], L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\n");
 	}	
 		
     while (!processEvents(width, height, debug, reset) )
@@ -143,7 +146,7 @@ int _main_(int _argc, char** _argv)
 		bgfx::setViewTransform(0, view, proj);				
 		
 		//draw your text
-		bgfx_font::submitTextBuffer(staticText, 0);	
+		textBufferManager->submitTextBuffer(staticText, 0);	
 
         // Advance to next frame. Rendering thread will be kicked to 
 		// process submitted rendering primitives.
@@ -155,11 +158,12 @@ int _main_(int _argc, char** _argv)
 	//destroy the fonts
 	for(size_t i=0; i<fontsCount;++i)
 	{
-		bgfx_font::destroyFont(fonts[i]);
+		fontManager->destroyFont(fonts[i]);
 	}
 	
-	bgfx_font::destroyTextBuffer(staticText);
-	bgfx_font::shutdown();
+	textBufferManager->destroyTextBuffer(staticText);
+	delete textBufferManager;
+	delete fontManager;	
 	// Shutdown bgfx.
     bgfx::shutdown();
 
