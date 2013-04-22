@@ -134,5 +134,4 @@ namespace bgfx_font
 		int16_t padding;		
 	};
 	
-	
 }

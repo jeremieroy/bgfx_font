@@ -2,7 +2,10 @@
  * License: http://www.opensource.org/licenses/BSD-2-Clause
 */
 #include "TextBufferManager.h"
+#include "FontManager.h"
 #include <assert.h>
+#include <stdio.h>
+#include <string.h>
 
 namespace bgfx_font
 {
@@ -39,7 +42,6 @@ static const bgfx::Memory* loadShader(const char* _shaderPath, const char* _shad
 
 	return NULL;
 }
-
 
 TextBufferManager::TextBufferManager(FontManager* fontManager):m_fontManager(fontManager), m_textBufferHandles(MAX_TEXT_BUFFER_COUNT)
 {
@@ -104,8 +106,7 @@ TextBufferHandle TextBufferManager::createTextBuffer(FontType _type, BufferType 
 	uint16_t textIdx = m_textBufferHandles.alloc();
 	BufferCache& bc = m_textBuffers[textIdx];
 	
-	bc.textBuffer.setFontManager(m_fontManager);
-	bc.textBuffer.clearTextBuffer();
+	bc.textBuffer = new TextBuffer(m_fontManager);	
 	bc.fontType = _type;
 	bc.bufferType = bufferType;	
 	bc.indexBufferHandle = bgfx::invalidHandle;
@@ -120,6 +121,8 @@ void TextBufferManager::destroyTextBuffer(TextBufferHandle handle)
 	
 	BufferCache& bc = m_textBuffers[handle.idx];
 	m_textBufferHandles.free(handle.idx);
+	delete bc.textBuffer;
+	bc.textBuffer = NULL;
 
 	if(bc.vertexBufferHandle == bgfx::invalidHandle ) return;
 	
@@ -155,8 +158,8 @@ void TextBufferManager::submitTextBuffer(TextBufferHandle _handle, uint8_t _id, 
 	assert( _handle.isValid() );
 	BufferCache& bc = m_textBuffers[_handle.idx];
 	
-	size_t indexSize = bc.textBuffer.getIndexCount() * bc.textBuffer.getIndexSize();
-	size_t vertexSize = bc.textBuffer.getVertexCount() * bc.textBuffer.getVertexSize();
+	size_t indexSize = bc.textBuffer->getIndexCount() * bc.textBuffer->getIndexSize();
+	size_t vertexSize = bc.textBuffer->getVertexCount() * bc.textBuffer->getVertexSize();
 	const bgfx::Memory* mem;
 
 	bgfx::setTexture(0, m_u_texColor, m_fontManager->getAtlas().getTextureHandle());
@@ -175,8 +178,7 @@ void TextBufferManager::submitTextBuffer(TextBufferHandle _handle, uint8_t _id, 
 		break;
 	case FONT_TYPE_DISTANCE_SUBPIXEL:
 		bgfx::setProgram(m_distanceSubpixelProgram);
-		//TODO FIX COLOR !!!!
-		bgfx::setState( BGFX_STATE_RGB_WRITE |BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_FACTOR, BGFX_STATE_BLEND_INV_SRC_COLOR) , bc.textBuffer.getTextColor());
+		bgfx::setState( BGFX_STATE_RGB_WRITE |BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_FACTOR, BGFX_STATE_BLEND_INV_SRC_COLOR) , bc.textBuffer->getTextColor());
 		break;	
 	}	
 
@@ -190,11 +192,11 @@ void TextBufferManager::submitTextBuffer(TextBufferHandle _handle, uint8_t _id, 
 			if(bc.vertexBufferHandle == bgfx::invalidHandle)
 			{
 				mem = bgfx::alloc(indexSize);
-				memcpy(mem->data, bc.textBuffer.getIndexBuffer(), indexSize);
+				memcpy(mem->data, bc.textBuffer->getIndexBuffer(), indexSize);
 				ibh = bgfx::createIndexBuffer(mem);
 
 				mem = bgfx::alloc(vertexSize);
-				memcpy(mem->data, bc.textBuffer.getVertexBuffer(), vertexSize);
+				memcpy(mem->data, bc.textBuffer->getVertexBuffer(), vertexSize);
 				vbh = bgfx::createVertexBuffer(mem, m_vertexDecl);
 
 				bc.indexBufferHandle = ibh.idx ;
@@ -204,8 +206,8 @@ void TextBufferManager::submitTextBuffer(TextBufferHandle _handle, uint8_t _id, 
 				ibh.idx = bc.indexBufferHandle;
 				vbh.idx = bc.vertexBufferHandle;
 			}
-			bgfx::setVertexBuffer(vbh,  bc.textBuffer.getVertexCount());
-			bgfx::setIndexBuffer(ibh, bc.textBuffer.getIndexCount());
+			bgfx::setVertexBuffer(vbh,  bc.textBuffer->getVertexCount());
+			bgfx::setIndexBuffer(ibh, bc.textBuffer->getIndexCount());
 		}break;
 		case DYNAMIC:
 		{
@@ -215,11 +217,11 @@ void TextBufferManager::submitTextBuffer(TextBufferHandle _handle, uint8_t _id, 
 			if(bc.vertexBufferHandle == bgfx::invalidHandle)
 			{
 				mem = bgfx::alloc(indexSize);
-				memcpy(mem->data, bc.textBuffer.getIndexBuffer(), indexSize);
+				memcpy(mem->data, bc.textBuffer->getIndexBuffer(), indexSize);
 				ibh = bgfx::createDynamicIndexBuffer(mem);
 
 				mem = bgfx::alloc(vertexSize);
-				memcpy(mem->data, bc.textBuffer.getVertexBuffer(), vertexSize);
+				memcpy(mem->data, bc.textBuffer->getVertexBuffer(), vertexSize);
 				vbh = bgfx::createDynamicVertexBuffer(mem, m_vertexDecl);
 
 				bc.indexBufferHandle = ibh.idx ;
@@ -233,28 +235,28 @@ void TextBufferManager::submitTextBuffer(TextBufferHandle _handle, uint8_t _id, 
 				//if(i++ < 5)
 				{				
 				mem = bgfx::alloc(indexSize);
-				memcpy(mem->data, bc.textBuffer.getIndexBuffer(), indexSize);
+				memcpy(mem->data, bc.textBuffer->getIndexBuffer(), indexSize);
 				bgfx::updateDynamicIndexBuffer(ibh, mem);
 
 				mem = bgfx::alloc(vertexSize);
-				memcpy(mem->data, bc.textBuffer.getVertexBuffer(), vertexSize);
+				memcpy(mem->data, bc.textBuffer->getVertexBuffer(), vertexSize);
 				bgfx::updateDynamicVertexBuffer(vbh, mem);				
 				}
 			}
-			bgfx::setVertexBuffer(vbh,  bc.textBuffer.getVertexCount());
-			bgfx::setIndexBuffer(ibh, bc.textBuffer.getIndexCount());
+			bgfx::setVertexBuffer(vbh,  bc.textBuffer->getVertexCount());
+			bgfx::setIndexBuffer(ibh, bc.textBuffer->getIndexCount());
 			
 		}break;
 		case TRANSIENT:
 		{
 			bgfx::TransientIndexBuffer tib;
 			bgfx::TransientVertexBuffer tvb;
-			bgfx::allocTransientIndexBuffer(&tib, bc.textBuffer.getIndexCount());
-			bgfx::allocTransientVertexBuffer(&tvb, bc.textBuffer.getVertexCount(), m_vertexDecl);
-			memcpy(tib.data, bc.textBuffer.getIndexBuffer(), indexSize);
-			memcpy(tvb.data, bc.textBuffer.getVertexBuffer(), vertexSize);
-			bgfx::setVertexBuffer(&tvb,  bc.textBuffer.getVertexCount());
-			bgfx::setIndexBuffer(&tib, bc.textBuffer.getIndexCount());
+			bgfx::allocTransientIndexBuffer(&tib, bc.textBuffer->getIndexCount());
+			bgfx::allocTransientVertexBuffer(&tvb, bc.textBuffer->getVertexCount(), m_vertexDecl);
+			memcpy(tib.data, bc.textBuffer->getIndexBuffer(), indexSize);
+			memcpy(tvb.data, bc.textBuffer->getVertexBuffer(), vertexSize);
+			bgfx::setVertexBuffer(&tvb,  bc.textBuffer->getVertexCount());
+			bgfx::setIndexBuffer(&tib, bc.textBuffer->getIndexCount());
 		}break;	
 	}
 
@@ -269,7 +271,7 @@ TextBuffer* TextBufferManager::getTextBuffer(TextBufferHandle _handle)
 {
 	assert( _handle.isValid() );
 	BufferCache& bc = m_textBuffers[_handle.idx];
-	return &bc.textBuffer;
+	return bc.textBuffer;
 }
 
 }

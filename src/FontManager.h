@@ -4,67 +4,42 @@
 #pragma once
 
 #include "bgfx_font_types.h"
-#include "TrueTypeFont.h"
 #include "cube_atlas.h"
 #include <bgfx.h>
 #include <bx/handlealloc.h>
 
-#if BGFX_CONFIG_USE_TINYSTL
-namespace tinystl
-{
-	//struct bgfx_allocator
-	//{
-		//static void* static_allocate(size_t _bytes);
-		//static void static_deallocate(void* _ptr, size_t /*_bytes*/);
-	//};
-} // namespace tinystl
-//#	define TINYSTL_ALLOCATOR tinystl::bgfx_allocator
-#	include <TINYSTL/unordered_map.h>
-//#	include <TINYSTL/unordered_set.h>
-namespace stl = tinystl;
-#else
-#	include <unordered_map>
-namespace std { namespace tr1 {} }
-namespace stl {
-	using namespace std;
-	using namespace std::tr1;
-}
-#endif // BGFX_CONFIG_USE_TINYSTL
-
-
 namespace bgfx_font
 {
-
 class FontManager
 {
 public:
-	///create the font manager using an external cube atlas (doesn't take ownership of the atlas)
+	/// create the font manager using an external cube atlas (doesn't take ownership of the atlas)
 	FontManager(Atlas* atlas);
-	//create the font manager and create the texture cube as BGRA8 with linear filtering
-	FontManager(uint32_t textureSideWidth=512);
+	/// create the font manager and create the texture cube as BGRA8 with linear filtering
+	FontManager(uint32_t textureSideWidth = 512);
+
 	~FontManager();
 
 	/// retrieve the atlas used by the font manager (e.g. to add stuff to it)
-	Atlas& getAtlas() {return (*m_atlas); }
-		
-	GlyphInfo& getBlackGlyph(){ return m_blackGlyph; }
+	Atlas& getAtlas() { return (*m_atlas); }	
 	
 	/// load a TrueType font from a file path
-	/// @return INVALID_HANDLE if the loading fail
+	/// @return invalid handle if the loading fail
 	TrueTypeHandle loadTrueTypeFromFile(const char* fontPath, int32_t fontIndex = 0);
 
 	/// load a TrueType font from a given buffer.
 	/// the buffer is copied and thus can be freed or reused after this call
-	/// @return INVALID_HANDLE if the loading fail
+	/// @return invalid handle if the loading fail
 	TrueTypeHandle loadTrueTypeFromMemory(const uint8_t* buffer, uint32_t size, int32_t fontIndex = 0);
 
 	/// unload a TrueType font (free font memory) but keep loaded glyphs
 	void unLoadTrueType(TrueTypeHandle handle);
 	
-	/// return a font descriptor whose height is a fixed pixel size	
+	/// return a font whose height is a fixed pixel size	
 	FontHandle createFontByPixelSize(TrueTypeHandle handle, uint32_t typefaceIndex, uint32_t pixelSize, FontType fontType = FONT_TYPE_ALPHA);
 
-	FontHandle createScaledFontToPixelSize(FontHandle _baseFontHandle, uint32_t _pixelSize);
+	/// return a scaled child font whose height is a fixed pixel size
+	FontHandle createScaledFontToPixelSize(FontHandle baseFontHandle, uint32_t pixelSize);
 
 	/// load a baked font (the set of glyph is fixed)
 	/// @return INVALID_HANDLE if the loading fail
@@ -82,6 +57,7 @@ public:
 	/// if the Font is a baked font, this only do validation on the characters
 	bool preloadGlyph(FontHandle handle, const wchar_t* _string);
 
+	/// Preload a single glyph, return true on success
 	bool preloadGlyph(FontHandle handle, CodePoint_t character);
 
 	/// bake a font to disk (the set of preloaded glyph)
@@ -95,43 +71,33 @@ public:
 	/// Return the rendering informations about the glyph region
 	/// Load the glyph from a TrueType font if possible
 	/// @return true if the Glyph is available
-	bool getGlyphInfo(FontHandle fontHandle, CodePoint_t codePoint, GlyphInfo& outInfo);
-	
-	/// pack the glyph UV coordinates (forward atlas function)
-	void packUV( uint16_t handle, uint8_t* vertexBuffer, uint32_t offset, uint32_t stride ) { m_atlas->packUV(handle, vertexBuffer, offset, stride); }
-private:
-	void init(uint32_t textureSideWidth);
+	bool getGlyphInfo(FontHandle fontHandle, CodePoint_t codePoint, GlyphInfo& outInfo);	
 
-	bool m_ownAtlas;
-	Atlas* m_atlas;
+	GlyphInfo& getBlackGlyph(){ return m_blackGlyph; }
+
+	class TrueTypeFont; //public to shut off Intellisense warning
+private:
 	
-	
-	typedef stl::unordered_map<CodePoint_t, GlyphInfo> GlyphHash_t;	
-	// cache font data
-	struct CachedFont
-	{
-		CachedFont(){ trueTypeFont = NULL; masterFontHandle.idx = -1; }
-		FontInfo fontInfo;
-		GlyphHash_t cachedGlyphs;
-		TrueTypeFont* trueTypeFont;
-		// an handle to a master font in case of sub distance field font
-		FontHandle masterFontHandle; 
-		int16_t __padding__;
-	};
-	bx::HandleAlloc m_fontHandles;
-	CachedFont* m_cachedFonts;
-	
+	struct CachedFont;
 	struct CachedFile
 	{		
 		uint8_t* buffer;
 		uint32_t bufferSize;
 	};	
+
+	void init(uint32_t textureSideWidth);
+	bool addBitmap(GlyphInfo& glyphInfo, const uint8_t* data);	
+
+	bool m_ownAtlas;
+	Atlas* m_atlas;
+	
+	bx::HandleAlloc m_fontHandles;	
+	CachedFont* m_cachedFonts;	
+	
 	bx::HandleAlloc m_filesHandles;
 	CachedFile* m_cachedFiles;	
 		
 	GlyphInfo m_blackGlyph;
-		
-	bool addBitmap(GlyphInfo& glyphInfo, const uint8_t* data);	
 
 	//temporary buffer to raster glyph
 	uint8_t* m_buffer;	

@@ -2,23 +2,20 @@
  * License: http://www.opensource.org/licenses/BSD-2-Clause
 */
 #pragma once
-
-#include "FontManager.h"
+#include "bgfx_font_types.h"
 
 namespace bgfx_font
 {
-
-
+class FontManager;
 
 class TextBuffer
 {
-public:
+public:	
 	
 	/// TextBuffer is bound to a fontManager for glyph retrieval
 	/// @remark the ownership of the manager is not taken
-	TextBuffer(FontManager* fontManager=NULL);
+	TextBuffer(FontManager* fontManager);
 	~TextBuffer();
-	void setFontManager(FontManager* mgr) { m_fontManager = mgr; }
 
 	void setStyle(uint32_t flags = STYLE_NORMAL) { m_styleFlags = flags; }
 	void setTextColor(uint32_t rgba = 0x000000FF) { m_textColor = toABGR(rgba); }
@@ -30,11 +27,15 @@ public:
 	
 	void setPenPosition(float x, float y) { m_penX = x; };// m_penY = y; }
 
+	/// return the size of the text 
+	//Rectangle measureText(FontHandle fontHandle, const char * _string);
+	//Rectangle measureText(FontHandle fontHandle, const wchar_t * _string);
+
 	/// append an ASCII/utf-8 string to the buffer using current pen position and color
 	void appendText(FontHandle fontHandle, const char * _string);
 
 	/// append a wide char unicode string to the buffer using current pen position and color
-	void appendText(FontHandle fontHandle, const wchar_t * _string);
+	void appendText(FontHandle fontHandle, const wchar_t * _string);	
 
 	/// Clear the text buffer and reset its state (pen/color)
 	void clearTextBuffer();
@@ -65,10 +66,13 @@ private:
 			(((rgba >> 24) & 0xff) << 0);   
 	}
 
+	static const size_t MAX_BUFFERED_CHARACTERS = 8192;
+
 	uint32_t m_styleFlags;
 
 	// color states
 	uint32_t m_textColor;
+
 	uint32_t m_backgroundColor;
 	uint32_t m_overlineColor;
 	uint32_t m_underlineColor;
@@ -109,7 +113,7 @@ private:
 	
 	size_t m_vertexCount;
 	size_t m_indexCount;
-	size_t m_lineStartIndex;
+	size_t m_lineStartIndex;	
 };
 
 }

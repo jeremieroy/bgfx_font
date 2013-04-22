@@ -29,7 +29,7 @@ private:
 	{
 		uint16_t indexBufferHandle;
 		uint16_t vertexBufferHandle;
-		TextBuffer textBuffer;
+		TextBuffer* textBuffer;
 		BufferType bufferType;
 		FontType fontType;
 		bool initialized;
@@ -38,7 +38,7 @@ private:
 	BufferCache* m_textBuffers;
 	bx::HandleAlloc m_textBufferHandles;
 	FontManager* m_fontManager;
-	bgfx::VertexDecl m_vertexDecl;	
+	bgfx::VertexDecl m_vertexDecl;
 	bgfx::UniformHandle m_u_texColor;
 	bgfx::UniformHandle m_u_inverse_gamma;
 	//shaders program
