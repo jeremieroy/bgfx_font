@@ -7,6 +7,8 @@
 #include <vector>
 #include "cube_atlas.h"
 
+namespace bgfx
+{
 
 //********** Rectangle packer implementation ************
 class RectanglePacker
@@ -478,3 +480,4 @@ void Atlas::packUV( const AtlasRegion& region, uint8_t* vertexBuffer, uint32_t o
 	}
 }
 
+}

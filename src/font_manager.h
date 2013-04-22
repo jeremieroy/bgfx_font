@@ -5,7 +5,7 @@
 #include <bgfx.h>
 #include <bx/handlealloc.h>
 
-class Atlas;
+namespace bgfx{ class Atlas; }
 
 namespace bgfx_font
 {
@@ -116,14 +116,14 @@ class FontManager
 {
 public:
 	/// create the font manager using an external cube atlas (doesn't take ownership of the atlas)
-	FontManager(Atlas* atlas);
+	FontManager(bgfx::Atlas* atlas);
 	/// create the font manager and create the texture cube as BGRA8 with linear filtering
 	FontManager(uint32_t textureSideWidth = 512);
 
 	~FontManager();
 
 	/// retrieve the atlas used by the font manager (e.g. to add stuff to it)
-	Atlas* getAtlas() { return m_atlas; }	
+	bgfx::Atlas* getAtlas() { return m_atlas; }	
 	
 	/// load a TrueType font from a file path
 	/// @return invalid handle if the loading fail
@@ -191,7 +191,7 @@ private:
 	bool addBitmap(GlyphInfo& glyphInfo, const uint8_t* data);	
 
 	bool m_ownAtlas;
-	Atlas* m_atlas;
+	(bgfx::Atlas* m_atlas;
 	
 	bx::HandleAlloc m_fontHandles;	
 	CachedFont* m_cachedFonts;	
